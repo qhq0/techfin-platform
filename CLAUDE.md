@@ -9,41 +9,35 @@ techfin-platform/
 ├── pom.xml                     # 父 POM：版本管理、模块聚合
 ├── CLAUDE.md
 ├── docs/                       # 文档
-├── techfin-common/             # 公共模块：统一响应、基础异常、全局异常处理
+├── techfin-common/             # 【公共模块】（无启动类）
 │   └── src/main/java/com/ccb/techfin/common/
-│       ├── GlobalExceptionHandler.java
-│       ├── dto/response/
-│       │   ├── CommonResp.java
-│       │   └── ApiResponse.java
-│       └── exception/
-│           ├── BusinessException.java
-│           └── FileValidationException.java
-└── techfin-sxd/                # 善新贷微服务
-    └── src/main/java/com/ccb/techfin/sxd/
-        ├── SxdApplication.java           # Spring Boot 启动类
-        ├── config/
-        │   ├── ApiProperties.java
-        │   ├── FileUploadConfig.java
-        │   └── RestTemplateConfig.java
-        ├── controller/
-        │   └── MaterialUploadController.java
-        ├── dto/
-        │   ├── request/UploadMaterialsRequest.java
-        │   ├── response/UploadMaterialsResponse.java
-        │   └── external/ (AttachmentUploadResponse, DocBatchAddItem, DocBatchAddResponse)
-        ├── entity/
-        │   └── ApplicationRecord.java
-        ├── enums/
-        │   └── TaskStatus.java
-        ├── repository/
-        │   └── ApplicationRecordRepository.java
-        ├── service/
-        │   ├── MaterialUploadService.java
-        │   └── impl/MaterialUploadServiceImpl.java
-        ├── validator/
-        │   └── FileValidator.java
-        └── resources/
-            └── application.properties
+│       ├── api/                # 统一响应包装（CommonResp）
+│       ├── exception/          # 全局异常处理 + 业务异常类
+│       ├── utils/              # 全局工具类
+│       └── config/             # 全局配置（如 Redis、MyBatis）
+│
+└── techfin-app/               # 【主业务模块】（含启动类）
+    ├── pom.xml                # 依赖 techfin-common
+    └── src/main/java/com/ccb/techfin/
+        ├── TechfinApplication.java    # 唯一的启动类
+        │
+        └── sxd/                      # 【善新贷业务域】（垂直分层）
+            ├── controller/
+            │   └── MaterialUploadController.java
+            ├── service/
+            │   ├── MaterialUploadService.java
+            │   └── impl/MaterialUploadServiceImpl.java
+            ├── mapper/
+            │   └── ApplicationRecordRepository.java
+            ├── entity/
+            │   └── ApplicationRecord.java
+            ├── dto/
+            │   ├── request/
+            │   ├── response/
+            │   └── external/
+            ├── enums/
+            ├── config/
+            └── validator/
 ```
 
 ## Build & Run
@@ -52,8 +46,8 @@ techfin-platform/
 # 编译整个平台
 mvn clean compile
 
-# 运行善新贷微服务（需要 MySQL localhost:3306/mydb）
-mvn spring-boot:run -pl techfin-sxd
+# 运行主业务模块（需要 MySQL localhost:3306/mydb）
+mvn spring-boot:run -pl techfin-app
 ```
 
 ## Key Conventions
@@ -67,7 +61,7 @@ mvn spring-boot:run -pl techfin-sxd
 ## Module Dependencies
 
 ```
-techfin-sxd ──> techfin-common
+techfin-app ──> techfin-common
 ```
 
-`SxdApplication` 使用 `@SpringBootApplication(scanBasePackages = "com.ccb.techfin")` 扫描两个模块的 Bean。
+`TechfinApplication` 使用 `@SpringBootApplication(scanBasePackages = "com.ccb.techfin")` 扫描两个模块的 Bean。

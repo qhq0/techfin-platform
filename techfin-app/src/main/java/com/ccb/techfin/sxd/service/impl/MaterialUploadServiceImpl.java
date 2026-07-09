@@ -9,7 +9,7 @@ import com.ccb.techfin.sxd.dto.request.UploadMaterialsRequest;
 import com.ccb.techfin.sxd.dto.response.UploadMaterialsResponse;
 import com.ccb.techfin.sxd.entity.ApplicationRecord;
 import com.ccb.techfin.sxd.enums.TaskStatus;
-import com.ccb.techfin.sxd.repository.ApplicationRecordRepository;
+import com.ccb.techfin.sxd.mapper.ApplicationRecordRepository;
 import com.ccb.techfin.sxd.service.MaterialUploadService;
 import com.ccb.techfin.sxd.validator.FileValidator;
 import lombok.RequiredArgsConstructor;

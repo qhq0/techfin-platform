@@ -12,9 +12,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>techfin-sxd</artifactId>
-    <name>techfin-sxd</name>
-    <description>善新贷 - 企业材料上传与信息采集服务</description>
+    <artifactId>techfin-app</artifactId>
+    <name>techfin-app</name>
+    <description>主业务模块：含善新贷等业务域的垂直分层代码</description>
 
     <dependencies>
         <!-- 内部模块 -->
@@ -65,6 +65,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <mainClass>com.ccb.techfin.TechfinApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>

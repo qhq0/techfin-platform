@@ -1,4 +1,4 @@
-package com.ccb.techfin.sxd.repository;
+package com.ccb.techfin.sxd.mapper;
 
 import com.ccb.techfin.sxd.entity.ApplicationRecord;
 import org.springframework.data.jpa.repository.JpaRepository;

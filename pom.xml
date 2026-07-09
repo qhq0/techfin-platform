@@ -25,7 +25,7 @@
 
     <modules>
         <module>techfin-common</module>
-        <module>techfin-sxd</module>
+        <module>techfin-app</module>
     </modules>
 
     <dependencyManagement>
@@ -37,7 +37,7 @@
             </dependency>
             <dependency>
                 <groupId>com.ccb</groupId>
-                <artifactId>techfin-sxd</artifactId>
+                <artifactId>techfin-app</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

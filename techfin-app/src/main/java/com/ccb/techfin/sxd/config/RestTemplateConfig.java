@@ -20,8 +20,8 @@ public class RestTemplateConfig {
     public RestTemplate restTemplate() {
         int timeout = fileUploadConfig.getTimeoutSeconds() * 1000;
         return new RestTemplateBuilder()
-                .setConnectTimeout(Duration.ofMillis(timeout))
-                .setReadTimeout(Duration.ofMillis(timeout))
+                .connectTimeout(Duration.ofMillis(timeout))
+                .readTimeout(Duration.ofMillis(timeout))
                 .build();
     }
 }
