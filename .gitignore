@@ -1,0 +1,12 @@
+# IDE
+.idea/
+
+# Maven
+target/
+*.jar
+*.war
+*.zip
+
+# OS
+.DS_Store
+Thumbs.db

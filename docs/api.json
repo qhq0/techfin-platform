@@ -1,0 +1,1107 @@
+{
+  "info": {
+    "_postman_id": "f8eb821f-3892-44e4-a8b5-3ef63544c124",
+    "name": "dib_api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "22341252"
+  },
+  "item": [
+    {
+      "name": "提取数据查询",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_y_industry_analysis\"\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/queryData",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "queryData"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "商业计划书-公司介绍",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_company_profile\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": null,\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660043400478720\",\r\n            \"update_by\": \"system_user\",\r\n            \"company_profile_text\": \"深圳市WG药业有限公司（简称“WG药业”）成立于2015年，由创始人王美女士创办，定位为专注儿童处方药的企业，致力于成为集研发、生产、引进、销售为一体的中国儿童处方药龙头企业。公司荣获国家高新技术企业、国家科技型中小企业、深圳市专精特新企业及深圳市创新型中小企业等荣誉资质。\\n\\n公司拥有一支顶尖的全球化管理团队，核心成员包括：创始人、董事长兼总经理王美女士，拥有近25年医药领域销售经验；首席技术官李鹏博士，具备17年高端药物制剂研发经历；研发子公司负责人吴宜博士，拥有十五年中美欧药品研发和管理经验；BD部副总经理张燕，拥有12年专业BD经历，成功引进17款儿药品种；总经办副总经理吴欢，拥有10年以上联想集团供应链及综合管理经验。在吴欢的推动下，公司团队规模已从50人扩充至150人。\\n\\n自成立至今，WG药业确立了“自研创新+合作引进”的双轮驱动战略。2019年明确该战略并启动首批合作引进项目；2020年深圳龙华研发实验室投入使用；2021年，公司首款产品奥维平®（磷酸奥司他韦干混悬剂）国内首家获批上市，并建立3个二类创新技术平台；2022年与奥赛康达成战略合作，产品入选第八批国家集采；2023年，卫艾宁®、贝择思®、乐美定®三款产品相继获批上市，深圳WG儿药创新研发中心正式投入使用，生产基地落户连云港国际医药创新产业园，并有3个产品入选第九批国家集采；2024年，公司与Sol-GelTechnologies签署资产购买协议，获得痤疮药物TWYNEO®在中国及以色列的权益，倍舒捷®、倍舒清®、比达舒®等产品获批上市。\\n\\n在资本市场方面，公司已完成多轮融资：天使轮由个人投资者完成；A轮由新浩投资完成；B轮及B+轮由倚锋资本领投及追加投资；C轮及C+轮由南山战新投、连云港金桥基金、江苏奥赛康、彭年集团完成，其中连云港金桥基金追加了C+轮融资。\\n\\n目前，WG药业共有产品超40个，其中自研30余个，引进9个。已有7个产品获批上市，涵盖抗流感、胃食管反流、多动症、抗癫痫、支气管疾病及抗过敏等领域；另有10项在研2类新药，预计产生专利20项。公司管线布局广泛，覆盖呼吸系统、抗感染、抗肿瘤、血液系统、消化系统、内分泌系统、神经系统、免疫系统及皮肤科等多个治疗领域，并构建了“治疗药物+功能性护肤品”的泛皮肤健康生态全景。\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-实际控制人及团队简介",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_director_keyresume\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"resume\": \"王美女士，深圳大学商务管理专业，清华五道口EMBA，近25年的医药领域销售工作经验，主要在康哲药业（00867）、健康元集团（600380）、丽珠医药（000513）担任相应产品全国销售负责人；对药品市场评估、商业转化、国际合作有敏锐嗅觉和独到见解；2015年创办WG药业，致力与打造中国第一“WG儿药”品牌；负责集团战略规划、管理运营以及市场销售。\",\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"name\": \"王美\",\r\n            \"update_state\": null,\r\n            \"id\": \"1522660073653993472\",\r\n            \"position\": \"创始人、董事长、总经理\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-主营业务和产品",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_business_and_products\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [{\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"business_and_products_text\": \"深圳市WG药业有限公司定位为专注儿童处方药的企业，致力于成为集研发、生产、引进、销售为一体的中国儿童处方药龙头企业。公司采取“自研创新+合作引进”的双轮驱动战略，构建了覆盖呼吸系统、抗感染、抗肿瘤、血液系统、消化系统、内分泌系统、神经系统、免疫系统及皮肤科等九大领域的产品管线，共有产品超40个，其中自研30余个，引进9个。\\n\\n在儿童处方药领域，公司已成功获批上市7个核心产品，并拥有多个处于审评审批或研发阶段的重点品种。已上市产品包括：针对抗流感的奥维平®（磷酸奥司他韦干混悬剂），系国内首家获批；针对胃食管反流的卫艾宁®（艾司奥美拉唑镁肠溶干混悬剂），系国内首家全规格获批；针对多动症（ADHD）的贝择思®（盐酸托莫西汀口服溶液）；针对二代抗癫痫的乐美定®（拉考沙胺口服溶液）；针对支气管疾病的倍舒捷®（吸入用盐酸丙卡特罗溶液）和倍舒清®（盐酸丙卡特罗口服溶液）；以及针对抗过敏的比达舒®（地氯雷他定口服溶液）。在研及审评中的重点产品涵盖吸入用布地奈德混悬液、碳酸司维拉姆干混悬剂、泊沙康唑口服混悬液、复方匹可硫酸钠口服溶液、左甲状腺素钠口服溶液、BMR-09（急性淋巴细胞白血病）、BMR-23（脑胶质瘤）等多个品种，注册分类涵盖2类新药及改良型新药，旨在解决儿童用药“四少”痛点，提供适宜剂型。\\n\\n此外，公司积极拓展泛皮肤健康生态，构建了“治疗药物+功能性护肤品”的闭环模式。在治疗药物方面，纵向深耕疾病谱，从成熟赛道（痤疮）向高增长赛道（脱发）及创新赛道（自免疾病）梯度覆盖。核心重磅产品为TWYNEO®复方凝胶，系从Sol-GelTechnologies引进的痤疮治疗药物，有效成分为过氧化苯甲酰与维甲酸，适用于成人及9岁以上人群寻常型痤疮的局部治疗，拥有长效专利保护（中国地区专利期截止2032年，有望延长至2038年），定位为皮肤外用领域十亿级大单品。同时，公司还布局了BMR-15、BMR-33等痤疮产品，以及针对湿疹、荨麻疹、脱发、白癜风、皮癣/甲癣等皮肤疾病的在研管线。在功能性护肤品方面，公司推出“药品+护肤品”联合方案，涵盖敏感肌护理、医美术后修复及慢性皮肤病辅助护理，旨在协同药物治疗，实现从症状缓解到长期护理的全程管理。\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660101340594176\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-经营情况介绍",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_business_circumstance\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660128729399296\",\r\n            \"text\": \"深圳市WG药业有限公司定位为专注儿童处方药的企业，目标成为集研发、生产、引进、销售为一体的中国儿童处方药龙头企业。公司具备国家高新技术企业、国家科技型中小企业、深圳市专精特新企业及深圳市创新型中小企业等荣誉资质。团队规模已从50人左右扩充至150人，并搭建了ERP系统及流向系统以优化运营管理。\\n\\n在产品布局与研发进展方面，公司采取“自研创新+合作引进”双轮驱动战略，共有产品超40个，其中自研30余个，引进9个。截至2024年，已有7个产品获批上市，包括奥维平®（磷酸奥司他韦干混悬剂）、卫艾宁®（艾司奥美拉唑镁肠溶干混悬剂）、贝择思®（盐酸托莫西汀口服溶液）、乐美定®（拉考沙胺口服溶液）、倍舒捷®（盐酸丙卡特罗吸入溶液）、倍舒清®（盐酸丙卡特罗口服溶液）及比达舒®（地氯雷他定口服溶液）。此外，公司还有10项在研2类新药，预计产生专利20项。在研管线涵盖呼吸系统、抗感染、抗肿瘤、血液系统、消化系统、内分泌系统、神经系统、免疫系统及皮肤科等多个领域，部分产品如吸入用布地奈德混悬液、比拉斯汀口服溶液等处于审评审批中，另有TWYNEO®复方凝胶等产品处于IND或生产放大阶段。\\n\\n在市场准入与资本运作方面，公司产品多次入选国家集采，2022年第八批国家集采中选1个品种，2023年第九批国家集采中选3个品种。公司已完成多轮融资，包括天使轮、A轮、B轮、B+轮及C轮（含C+轮），投资方涵盖个人投资者、新浩投资、倚锋资本、南山战新投、连云港金桥基金、江苏奥赛康及彭年集团。2023年，公司深圳WG儿药创新研发中心投入使用，生产基地正式落户连云港国际医药创新产业园。2024年，公司与Sol-GelTechnologies签署资产购买协议，获得痤疮药物TWYNEO®在中国及以色列的资产权益。\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-资质认证与荣誉",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_company_qualification\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "  \"tableName\": \"dib_company_qualification\" \r\n{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660135255736320\",\r\n            \"text\": \"公司荣获国家高新技术企业、国家科技型中小企业、深圳市专精特新企业以及深圳市创新型中小企业等荣誉资质。\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-研发成果与转化情况",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_progressiveness_description\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"progressiveness_text\": \"WG药业构建了“自研创新+合作引进”双轮驱动的研发战略，并建立了完善的研发体系与设施。公司成立了深圳龙华研发实验室及深圳WG儿药创新研发中心，组建了由顶尖全球化管理团队领衔的研发力量，包括拥有17年高端药物制剂研发经验的首席技术官李鹏博士，以及具备十五年中美欧药品研发管理经验的研发子公司负责人吴宜博士。核心团队负责主持高端制剂技术平台搭建，目前负责在研项目超过15项，累计管理项目近百个，成功推动了多个改良新药及创新药的立项与申报。\\n\\n在技术成果与产品管线方面，公司共布局产品超40个，其中自研项目30余个，引进项目9个。研发重点聚焦于儿童专用剂型及特色制剂，涵盖呼吸系统、抗感染、神经系统、皮肤科等多个领域。公司已成功获批上市7个重磅产品，包括国内首家获批的磷酸奥司他韦干混悬剂（奥维平®）、艾司奥美拉唑镁肠溶干混悬剂（卫艾宁®）、盐酸托莫西汀口服溶液（贝择思®）、拉考沙胺口服溶液（乐美定®）、盐酸丙卡特罗吸入溶液（倍舒捷®）、盐酸丙卡特罗口服溶液（倍舒清®）及地氯雷他定口服溶液（比达舒®）。此外，公司还拥有10项在研2类新药，预计将产生专利20项，管线覆盖从成熟赛道（如痤疮）到高增长及创新赛道（如脱发、自免疾病）的梯度布局。\\n\\n在成果转化与商业化应用上，公司多项技术成果已实现产品化并产生显著市场效益。例如，奥维平®作为国内首家获批的磷酸奥司他韦干混悬剂，解决了儿童流感用药痛点；卫艾宁®实现了国内首家全规格获批上市；贝择思®与乐美定®分别针对多动症及二代抗癫痫领域填补了市场空白。2024年，公司进一步拓展皮肤健康领域，与Sol-GelTechnologies签署资产购买协议，获得痤疮药物TWYNEO®在中国及以色列的资产权益，该产品拥有4项已获批专利及2项在审专利，专利保护期有望延长至2038年，具备十亿级大单品潜力。同时，公司通过“药品+护肤品”联合方案，构建了从药物治疗到长期护理的泛皮肤健康生态闭环。\\n\\n在外部合作协同方面，公司BD团队成功与13家欧美及印度药企建立紧密合作，累计引进17款儿药品种，包括欧洲原研独家内分泌产品及独家耳鼻喉科、新生儿专用重磅产品。2022年，公司与奥赛康达成战略合作，共同推进研发与产业化。通过这种“研发+引进”的协同模式，公司有效整合了全球优质资源，加速了高品质儿童处方药及皮肤健康产品的上市进程。\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660167971307520\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-竞争优势介绍",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_competitive_advantages\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"competitiveness_text\": \"首先，公司构建了顶尖的全球化管理团队，核心成员具备全产业链综合能力。创始人王美女士拥有近25年医药领域销售经验，曾担任康哲药业、健康元集团等知名企业全国销售负责人，对药品市场评估、商业转化及国际合作具有敏锐嗅觉；首席技术官李鹏博士为深圳市高层次人才，拥有17年高端药物制剂研发经历，曾主持亚胺培南西司他丁钠注射剂国内首仿等明星项目；研发子公司负责人吴宜博士具备十五年中美欧药品研发和管理经验，成功推动多个改良新药立项及上市；BD部副总经理张燕拥有12年专业BD经历，成功引进17款儿药品种并与13家欧美及印度药企建立紧密合作。\\n\\n此外，公司确立了“自研创新+合作引进”双轮驱动战略，拥有强大的高端制剂技术平台。公司共有产品超40个，其中自研30余个，引进9个，在研2类新药10项，预计产生专利20项。公司已成功获批上市7个产品，包括国内首家获批的磷酸奥司他韦干混悬剂（奥维平®）、艾司奥美拉唑肠溶干混悬剂（卫艾宁®）、盐酸托莫西汀口服溶液（贝择思®）及拉考沙胺口服溶液（乐美定®）等，并在呼吸系统、抗感染、神经系统、皮肤科等多个领域布局了丰富的产品管线。\\n\\n同时，公司在资质荣誉与知识产权方面具备显著优势。公司荣获“国家高新技术企业”、“国家科技型中小企业”、“深圳市专精特新企业”及“深圳市创新型中小企业”等荣誉资质。在知识产权壁垒方面，公司引进的重磅产品TWYNEO®（复方凝胶）在中国地区已有4项获批专利，专利期截止2032年，另有2项在审，专利保护有望延长至2038年，构建了长效专利保护壁垒。\\n\\n最后，公司具备高效的供应链与运营管理能力。总经办副总经理吴欢拥有10年以上联想集团供应链管理经验，成功搭建公司ERP系统及流向系统，优化全链条成本及时效，并推动公司从50人规模扩充至150人，同时成功获批国高资质。生产基地已正式落户连云港国际医药创新产业园，深圳WG儿药创新研发中心也已投入使用，为产品规模化生产与持续研发提供了坚实的硬件支撑。\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660195502718976\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-发展战略情况",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_development_strategy\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"strategy_text\": \"深圳市WG药业有限公司确立了成为集研发、生产、引进、销售为一体的中国儿童处方药龙头企业的战略目标，并坚持“自研创新+合作引进”的双轮驱动战略。在业务布局上，公司聚焦儿童处方药与泛皮肤健康两大领域，构建了覆盖呼吸系统、抗感染、抗肿瘤、血液系统、消化系统、内分泌系统、神经系统、免疫系统及皮肤科等九大治疗领域的产品矩阵，共有产品超40个，其中自研30余个，引进9个。公司计划通过梯度覆盖策略，从成熟赛道（如痤疮）向高增长赛道（如脱发）及创新赛道（如自免疾病）延伸，并构建“治疗+护理”闭环，推出“药品+护肤品”联合方案，以满足患者依从性差及伴随症状管理等未满足的临床需求。\\n\\n在产品管线推进方面，公司已实现7个产品获批上市，包括奥维平®、卫艾宁®、贝择思®、乐美定®、倍舒捷®、倍舒清®及比达舒®。针对在研产品，公司制定了明确的上市时间表：预计2025年推进吸入用布地奈德混悬液、比拉斯汀口服溶液、碳酸司维拉姆干混悬剂及泊沙康唑口服混悬液进入审评审批阶段；2026年推进复方匹可硫酸钠口服溶液完成生产放大；2027年计划推进TWYNEO®复方凝胶、BMR-09口服溶液、左甲状腺素钠口服溶液及BMR-19口腔速溶膜片等产品的IND申报或生产放大；2028年则计划推进舒他西林干混悬剂、BMR-16透皮喷雾剂及BMR-23口服溶液等产品的上市进程。此外，公司重点布局重磅产品TWYNEO®，该产品作为全球首个获批的复方凝胶，拥有长效专利保护（预计至2038年），旨在打造皮肤外用领域的十亿级大单品。在产能与研发基地建设上，公司已于2023年正式启用深圳WG儿药创新研发中心，并将生产基地落户连云港国际医药创新产业园，以支撑全产业链的快速发展。\",\"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522660216482627584\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "商业计划书-行业发展情况",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_y_industry_analysis\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"N\",\r\n            \"page_num\": \"1\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522659418314964992\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"1.深圳市WG药业有限公司商业计划书（脱敏）.pdf\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\":\"1522660287680937984\",\r\n            \"text\": \"中国儿童用药市场呈现出增速快、潜力大、临床痛点突出及行业壁垒高的显著特征。2023年市场规模已超1200亿元，复合年增长率（CAGR）达10.8%，预计未来规模有望翻倍至超2000亿元。市场结构分为儿童专用药（155.3亿元）、儿童适用药（864.4亿元）及成人超说明书用药（182.9亿元）。庞大的需求基础源于2.39亿的0-14岁儿童人群及2022年约2.6亿的医院儿科诊疗人次，且儿科门诊量呈逐年增长趋势。\\n\\n当前市场面临严峻的临床痛点，主要表现为“四少”（品种少、剂型少、规格少、专药少）及用药问题突出。数据显示，儿童用药不良反应中注射剂占比高达70.40%，而临床医生反馈缺乏专用药、用法用量及安全有效性信息的比例分别达67.90%、45.70%和74.10%。此外，中成药难以完全满足血液、心血管、抗感染及肿瘤等细分科室的特效药需求，导致超说明书用药现象普遍，儿科化药及生物药市场潜力巨大。行业壁垒方面，研发、临床及生产难度极高，全国仅40家企业具备儿童药生产能力，且面临伦理要求高、招募难、工艺复杂等挑战。\\n\\n竞争格局方面，中国儿童药企业集中度不高，2022年公立医院端TOP10企业合计市占率仅为48%，其中济川药业以13.2%的市占率领先，其余企业份额分散。市场同质化竞争激烈，约80%的产品集中在呼吸、消化及抗感染领域，而神经系统、内分泌、皮肤等高发疾病领域仍面临缺医少药难题。剂型结构上，注射剂、片剂及胶囊占主导，适宜低龄儿童的混悬剂、吸入剂等特色制剂较为匮乏。相比之下，美国通过BPCA和PREA法案及独占权政策，已推动304个品种获批，适应症分布更为多元。\\n\\n政策环境正迎来重大利好，中国儿童药市场进入“春风期”。CDE于2021年开设儿童用药专栏，并连续发布五批《鼓励研发申报儿童药品清单》（共158个品种），涵盖血液、神经系统、肿瘤等创新领域。审评审批方面，优先审评政策广泛落实，截至2023年已有104条注册申请获批；市场准入上，儿童药享有10年数据保护期及最长12个月的市场独占期，且优先进入国家医保基药目录，不受“一品两规”限制，集采风险相对较小（儿科品种占比约8%）。这些政策旨在加速填补临床空缺，推动市场向欧美水平追赶。\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": null\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "财务报表-附注信息",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_intervening_y_auditreport_jh\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"item\": \"财务报表截止日期\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"格式YYYY-MM-DD\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": \"2025-06-30\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697600\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"是否经过审计\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"1-已审计,2-未审计\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": \"2\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697601\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"审计日期\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"格式YYYY-MM-DD,是否经过审计为已审计时为必输项,否则不允许输入\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697602\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"财务报表类型\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"1-年报,2-半年报,3-季报,4-月报\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": \"2\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697603\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"财务报表口径\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"1-单一,2-合并\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": \"2\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697604\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"财务报表币种\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"156-人民币\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": \"156\",\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697605\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"财务报表是否经过调整\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"1-是,0-否\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697606\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"财务报表调整原因\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697607\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"财务报表会计准则\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697608\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"审计意见类型\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": \"1-无保留,2-保留,3-否定,4-拒绝发表意见\",\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697609\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"审计机构名称\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\":\"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697610\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"审计机构经营执照号码\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697611\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item\": \"审计机构证书编号\",\r\n            \"add_by\": \"admin\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"sync_time\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"item_value\": null,\r\n            \"audit_time\": \"2026-07-03\",\r\n            \"update_time\": \"2026-07-03\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"doc_name\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n            \"audit_by\": \"admin\",\r\n            \"company_name\": null,\r\n            \"update_state\": null,\r\n            \"id\": \"1522662020364697612\",\r\n            \"update_by\": \"admin\",\r\n            \"add_time\": \"2026-07-03\",\r\n            \"report_date\": \"2025-06-30\"\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "财务报表-利润表",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_fin_profit_statement\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"annotation\": null,\r\n            \"item_code\": \"P1000001PT\",\r\n            \"item\": \"一、营业总收入\",\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"28\",\r\n            \"remark\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"current_amount\": 91093762553.970000,\r\n            \"audit_time\": \"2026-07-02\",\r\n            \"unit\": \"元\",\r\n            \"update_time\": \"2026-07-02\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"item_standard\": \"营业总收入\",\r\n            \"update_state\": null,\r\n            \"id\": \"1522204344052678656\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-02\",\r\n            \"last_amount\": 83451164646.530000,\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"annotation\":\"41\",\r\n            \"item_code\": \"P1100101PP\",\r\n            \"item\": \"其中：营业收入\",\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"28\",\r\n            \"remark\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"current_amount\": 89389354416.840000,\r\n            \"audit_time\": \"2026-07-02\",\r\n            \"unit\": \"元\",\r\n            \"update_time\": \"2026-07-02\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"item_standard\": \"其中：营业收入\",\r\n            \"update_state\": null,\r\n            \"id\": \"1522204344052678657\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-02\",\r\n            \"last_amount\": 81930977667.750000,\r\n            \"report_date\": \"2025-06-30\"\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "财务报表-资产负债表",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_fin_balance\"\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/queryData",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "queryData"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"item_code\": \"B1100101BB\",\r\n            \"note\": \"1\",\r\n            \"item\": \"货币资金\",\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"current_amount\": 12345678901.230000,\r\n            \"audit_time\": \"2026-07-02\",\r\n            \"unit\": \"元\",\r\n            \"update_time\": \"2026-07-02\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"item_standard\": \"货币资金\",\r\n            \"update_state\": null,\r\n            \"id\": \"1522204342588866560\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-02\",\r\n            \"last_amount\": 98765432109.870000,\r\n            \"report_date\": \"2025-06-30\"\r\n        },\r\n        {\r\n            \"item_code\": \"B1102001BB\",\r\n            \"note\": null,\r\n            \"item\": \"结算备付金\",\r\n            \"add_by\": \"system_user\",\r\n            \"company_id\": null,\r\n            \"audit_state\": \"S\",\r\n            \"page_num\": \"24\",\r\n            \"remark\": null,\r\n            \"doc_id\": \"1522204279569448960\",\r\n            \"current_amount\": null,\r\n            \"audit_time\": \"2026-07-02\",\r\n            \"unit\": \"元\",\r\n            \"update_time\": \"2026-07-02\",\r\n            \"project_id\": \"1521841328915996672\",\r\n            \"audit_by\": \"system_user\",\r\n            \"company_name\": null,\r\n            \"item_standard\": \"结算备付金\",\r\n            \"update_state\": null,\r\n            \"id\": \"1522204342588866561\",\r\n            \"update_by\": \"system_user\",\r\n            \"add_time\": \"2026-07-02\",\r\n            \"last_amount\": null,\r\n            \"report_date\": \"2025-06-30\"\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "资料关联表提取状态",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/docTableExtractState/1522659418314964992",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "docTableExtractState",
+            "1522659418314964992"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "资料关联表提取状态-商业计划书",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/docTableExtractState/1522659418314964992",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "docTableExtractState",
+                "1522659418314964992"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"tableName\": \"dib_manage_company_profile\",\r\n            \"tableCnName\": \"商业计划书-公司介绍\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_director_keyresume\",\r\n            \"tableCnName\": \"商业计划书-实际控制人及团队简介\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_manage_business_and_products\",\r\n            \"tableCnName\": \"商业计划书-主营业务和产品\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_manage_business_circumstance\",\r\n            \"tableCnName\": \"商业计划书-经营情况介绍\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_company_qualification\",\r\n            \"tableCnName\": \"商业计划书-资质认证与荣誉\",\"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_manage_progressiveness_description\",\r\n            \"tableCnName\": \"商业计划书-研发成果及转化情况\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_manage_competitive_advantages\",\r\n            \"tableCnName\": \"商业计划书-竞争优势介绍\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_manage_development_strategy\",\r\n            \"tableCnName\": \"商业计划书-发展战略情况\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_manage_y_industry_analysis\",\r\n            \"tableCnName\": \"商业计划书_行业发展情况\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"1\"\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        },
+        {
+          "name": "资料关联表提取状态-财务报表",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/docTableExtractState/1522659418314964993",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "docTableExtractState",
+                "1522659418314964993"
+              ]
+            }
+          },
+          "_postman_previewlanguage": null,
+          "header": null,
+          "cookie": [],
+          "body": "{\r\n    \"data\": [\r\n        {\r\n            \"tableName\": \"dib_intervening_y_auditreport_jh\",\r\n            \"tableCnName\": \"报表附注信息\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"24\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_balance\",\r\n            \"tableCnName\": \"合并资产负债表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"24,25,26\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_profit_statement\",\r\n            \"tableCnName\": \"合并利润表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"28,29,30\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_cash_flow\",\r\n            \"tableCnName\": \"合并现金流量表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"32,33,31\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_owner_equity_change\",\r\n            \"tableCnName\": \"合并所有者权益变动表_本年\",\r\n            \"extractState\": \"Y\",\"auditState\": \"Y\",\r\n            \"pageNum\": \"35\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_owner_equity_change_last\",\r\n            \"tableCnName\": \"合并所有者权益变动表_上年\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"35,36\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_balance_parent\",\r\n            \"tableCnName\": \"母公司资产负债表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"26,27,28\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_profit_statement_parent\",\r\n            \"tableCnName\": \"母公司利润表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"30,31\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_cash_flow_parent\",\r\n            \"tableCnName\": \"母公司现金流量表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"33,34\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_owner_equity_change_parent\",\r\n            \"tableCnName\": \"母公司所有者权益变动表_本年\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"37\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_owner_equity_change_parent_last\",\r\n            \"tableCnName\": \"母公司所有者权益变动表_上年\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"38\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_trading_financial_assets\",\r\n            \"tableCnName\": \"财务附注_交易性金融资产分析\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"51\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_account_receivable_by_aging\",\r\n            \"tableCnName\": \"财务附注_应收账款明细-按账龄分析法\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"51\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_other_account_receivable_by_aging\",\r\n            \"tableCnName\": \"财务附注_其他应收账款明细_按账龄分析法\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\"pageNum\": \"53,54\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_available_sale_financial_assets\",\r\n            \"tableCnName\": \"财务附注_可供出售金融资产\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"P\",\r\n            \"pageNum\": null\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_stock\",\r\n            \"tableCnName\": \"财务附注_存货表\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"56\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_revenue_expenditure\",\r\n            \"tableCnName\": \"财务附注_营业收入和营业成本\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"69,70\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_assets_impairment_loss\",\r\n            \"tableCnName\": \"财务附注_资产减值损失\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"P\",\r\n            \"pageNum\": null\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_cash_flow_supplementary_material\",\r\n            \"tableCnName\": \"现金流量表补充材料\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"76,77\"\r\n        },\r\n        {\r\n            \"tableName\": \"dib_fin_cash_equivalent\",\r\n            \"tableCnName\": \"财务附注_现金和现金等价物的构成\",\r\n            \"extractState\": \"Y\",\r\n            \"auditState\": \"Y\",\r\n            \"pageNum\": \"77,78\"\r\n        }\r\n    ],\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "资料删除",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": ""
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/delete/1522656394616045568",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "delete",
+            "1522656394616045568"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "资料删除",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": ""
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/delete/1522656394616045568",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "delete",
+                "1522656394616045568"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"data\": true,\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "资料批量新增",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "[\n  {\n    \"attId\": \"1522655358249328640\",\n    \"dirId\": 0,\n    \"docName\": \"商业计划书2\",\n    \"docSize\": 791,\n    \"docTypeId\": 1455619597903695872,\n    \"extraInfo\": \"{}\",\n    \"projectId\": 1521841328915996672,\n    \"reportDate\": \"2025-06-30\"\n  }\n]"
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/batch/add",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "batch",
+            "add"
+          ]
+        },
+        "description": "请求体中的attId为附件上传接口响应体中的data字段；dirId默认为0；docName为附件上传时文件的名称；docSize为文件大小；docTypeId为文件类型ID，分为两类，商业计划书为1455619597903695872，财务报表为1273757631042949120；extraInfo默认为{}；projectId默认为1521841328915996672；reportDate为用户输入的报告日期；资料新增成功后响应体中的id即为文件的docId"
+      },
+      "response": [
+        {
+          "name": "资料批量新增",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  {\n    \"attId\": \"1522655358249328640\",\n    \"dirId\": 0,\n    \"docName\": \"商业计划书2\",\n    \"docSize\": 791,\n    \"docTypeId\": 1455619597903695872,\n    \"extraInfo\": \"{}\",\n    \"projectId\": 1521841328915996672,\n    \"reportDate\": \"2025-06-30\"\n  }\n]"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/batch/add",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "batch",
+                "add"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"data\": {\r\n        \"invalidDocNames\": null,\r\n        \"docList\": [\r\n            {\r\n                \"id\": \"1522656394616045568\",\r\n                \"docName\": \"商业计划书2\",\r\n                \"projectId\": \"1521841328915996672\",\r\n                \"dirId\": \"0\",\r\n                \"dirIdPath\": null,\r\n                \"docTypeId\": \"1455619597903695872\",\r\n                \"docTypeName\": null,\r\n                \"docTypeIdPath\": \"1279373407439425536\",\r\n                \"attId\": \"1522655358249328640\",\r\n                \"doublePdfId\": null,\r\n                \"txtAttId\": null,\r\n                \"docSize\": 791,\r\n                \"reportDate\": null,\r\n                \"scannedCopyFlag\": false,\r\n                \"extraInfo\": \"{}\",\r\n                \"classifyState\": \"20\",\r\n                \"convertState\": \"U\",\r\n                \"extractState\": \"U\",\r\n                \"verifyState\": \"U\",\r\n                \"auditState\": \"U\",\r\n                \"extractDocCount\": null,\r\n                \"auditDocCount\": null,\r\n                \"totalDocCount\": null,\r\n                \"machineCompletionRate\": 0.0,\r\n                \"completionRate\": 0.0,\r\n                \"addUserId\": \"admin\",\r\n                \"addUserName\": \"系统管理员\",\r\n                \"addTime\": \"2026-07-03 17:32:54\",\r\n                \"updateUserId\": \"admin\",\r\n                \"updateUserName\": \"系统管理员\",\r\n                \"updateTime\": \"2026-07-03 17:32:54\",\r\n                \"osTxtAttId\": null,\r\n                \"osConvertState\": \"U\",\r\n                \"osConvertDuration\": 0\r\n            }\r\n        ]\r\n    },\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "资料新增",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"attId\": \"1522260339629744128\",\n  \"dirId\": 0,\n  \"docName\": \"商业计划书\",\n  \"docSize\": 786,\n  \"docTypeId\": 1455619597903695872,\n  \"extraInfo\": \"{}\",\n  \"projectId\": 1521841328915996672,\n  \"reportDate\": \"2025-06-30\"\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/add",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "add"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "资料溯源",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"bottomText\": \"\", \"docId\": 0, \"pageNum\": \"\", \"text\": \"\", \"textsOfCurrentRow\": [], \"topText\": \"\" }"
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/docTraceSource",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "docTraceSource"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "资料详情",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/get/1522204279569448960",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "get",
+            "1522204279569448960"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "资料详情",
+          "originalRequest": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/get/1522204279569448960",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "get",
+                "1522204279569448960"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"data\": {\r\n        \"id\": \"1522204279569448960\",\r\n        \"docName\": \"3.贵州茅台2025年半年度报告（公开信息）.pdf\",\r\n        \"projectId\": \"1521841328915996672\",\r\n        \"dirId\": \"0\",\r\n        \"dirIdPath\": null,\r\n        \"docTypeId\": \"1273757631042949120\",\r\n        \"docTypeName\": null,\r\n        \"docTypeIdPath\": \"1263545161984643072/1263623859077255168\",\r\n        \"attId\": \"1522204270320672768\",\r\n        \"doublePdfId\": null,\r\n        \"txtAttId\": \"1522204307528679424\",\r\n        \"docSize\": 786,\r\n        \"reportDate\": \"2025-06-30\",\r\n        \"scannedCopyFlag\": false,\r\n        \"extraInfo\": \"{}\",\r\n        \"classifyState\": \"20\",\r\n        \"convertState\": \"Y \",\r\n        \"extractState\": \"Y\",\r\n        \"verifyState\": \"N \",\r\n        \"auditState\": \"Y\",\r\n        \"extractDocCount\": null,\r\n        \"auditDocCount\": null,\r\n        \"totalDocCount\": null,\r\n        \"machineCompletionRate\": 100.0,\r\n        \"completionRate\": 100.0,\r\n        \"addUserId\": \"admin\",\r\n        \"addUserName\": \"系统管理员\",\r\n        \"addTime\": \"2026-07-02 11:36:21\",\"updateUserId\": \"system_user\",\r\n        \"updateUserName\": \"system_user\",\r\n        \"updateTime\": \"2026-07-02 11:36:43\",\r\n        \"osTxtAttId\": null,\r\n        \"osConvertState\": \"F\",\r\n        \"osConvertDuration\": 0\r\n    },\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "资料辅助分类",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"busId\": 1469278973613821952,\n  \"docId\": 0,\n  \"docName\": \"商业计划书-发展战略情况\",\n  \"hasAuthorized\": true\n}"
+        },
+        "url": {
+          "raw": "{{url}}/api/extract/open/doc/classify",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "extract",
+            "open",
+            "doc",
+            "classify"
+          ]
+        }
+      },
+      "response": [
+        {
+          "name": "资料辅助分类",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"busId\": 1469278973613821952,\n  \"docId\": 0,\n  \"docName\": \"商业计划书-发展战略情况\",\n  \"hasAuthorized\": true\n}"
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/extract/open/doc/classify",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "extract",
+                "open",
+                "doc",
+                "classify"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"data\": {\r\n        \"id\": \"0\",\r\n        \"docName\": \"商业计划书-发展战略情况\",\r\n        \"docTypeId\": \"1455619597903695872\",\r\n        \"docTypeName\": \"商业计划书\",\r\n        \"reportDateFlag\": \"0\",\r\n        \"reportDate\": null,\r\n        \"hasAuthorized\": true\r\n    },\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    },
+    {
+      "name": "附件上传",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "c1-token",
+            "value": "{{c1-token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "value": ""
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{url}}/api/mdm/open/att/upload",
+          "host": [
+            "{{url}}"
+          ],
+          "path": [
+            "api",
+            "mdm",
+            "open",
+            "att",
+            "upload"
+          ]
+        },
+        "description": "附件上传接口，响应体中data字段为文件的attId，用于后面资料批量新增接口"
+      },
+      "response": [
+        {
+          "name": "附件上传",
+          "originalRequest": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "c1-token",
+                "value": "{{c1-token}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "value": ""
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{mockUrl}}/api/mdm/open/att/upload",
+              "host": [
+                "{{mockUrl}}"
+              ],
+              "path": [
+                "api",
+                "mdm",
+                "open",
+                "att",
+                "upload"
+              ]
+            }
+          },
+          "_postman_previewlanguage": "",
+          "header": [],
+          "cookie": [
+            {
+              "expires": "Invalid Date",
+              "domain": "",
+              "path": ""
+            }
+          ],
+          "body": "{\r\n    \"data\": \"1522260339629744128\",\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+        }
+      ]
+    }
+  ]
+}
