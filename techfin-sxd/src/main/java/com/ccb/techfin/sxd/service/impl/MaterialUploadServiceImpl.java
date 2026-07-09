@@ -13,6 +13,7 @@ import com.ccb.techfin.sxd.repository.ApplicationRecordRepository;
 import com.ccb.techfin.sxd.service.MaterialUploadService;
 import com.ccb.techfin.sxd.validator.FileValidator;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -246,11 +247,11 @@ public class MaterialUploadServiceImpl implements MaterialUploadService {
 
     private String generateTaskId() {
         UUID uuid = UUID.randomUUID();
-        return "TASK-" + Long.toHexString(uuid.getMostSignificantBits())
-                + Long.toHexString(uuid.getLeastSignificantBits());
+        return "TASK-" + String.format("%016x%016x",
+                uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 
-    @lombok.Value
+    @Value
     private static class UploadedFileInfo {
         String attId;
         String fileName;

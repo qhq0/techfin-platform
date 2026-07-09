@@ -11,7 +11,6 @@ import java.util.Map;
 @ConfigurationProperties(prefix = "api")
 public class ApiProperties {
 
-    private String baseUrl;
     private String attachmentUploadUrl;
     private String docBatchAddUrl;
     private Long projectId;
