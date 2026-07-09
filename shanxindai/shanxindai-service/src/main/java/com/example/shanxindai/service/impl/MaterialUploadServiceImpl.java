@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,23 +61,8 @@ public class MaterialUploadServiceImpl implements MaterialUploadService {
         List<UploadedFileInfo> uploaded = new ArrayList<>();
 
         try {
-            // 上传财务报表
-            if (request.getFinanceFiles() != null) {
-                for (MultipartFile file : request.getFinanceFiles()) {
-                    String attId = uploadAttachment(file, token);
-                    uploaded.add(new UploadedFileInfo(attId, file, "finance"));
-                    log.debug("Finance file uploaded: name={}, attId={}", file.getOriginalFilename(), attId);
-                }
-            }
-
-            // 上传商业计划书
-            if (request.getBusinessFiles() != null) {
-                for (MultipartFile file : request.getBusinessFiles()) {
-                    String attId = uploadAttachment(file, token);
-                    uploaded.add(new UploadedFileInfo(attId, file, "business"));
-                    log.debug("Business file uploaded: name={}, attId={}", file.getOriginalFilename(), attId);
-                }
-            }
+            uploadFiles(request.getFinanceFiles(), "finance", token, uploaded);
+            uploadFiles(request.getBusinessFiles(), "business", token, uploaded);
 
             if (uploaded.isEmpty()) {
                 throw new BusinessException("NO_FILES", "请至少上传一个文件");
@@ -135,6 +121,22 @@ public class MaterialUploadServiceImpl implements MaterialUploadService {
     }
 
     // ==================== 私有方法 ====================
+
+    /**
+     * 上传一组文件
+     */
+    private void uploadFiles(List<MultipartFile> files, String businessType, String token,
+                             List<UploadedFileInfo> uploaded) {
+        if (files == null) {
+            return;
+        }
+        for (MultipartFile file : files) {
+            String attId = uploadAttachment(file, token);
+            String fileName = file.getOriginalFilename();
+            uploaded.add(new UploadedFileInfo(attId, fileName, file.getSize(), businessType));
+            log.debug("{} file uploaded: name={}, attId={}", businessType, fileName, attId);
+        }
+    }
 
     /**
      * 校验必填参数
@@ -205,28 +207,30 @@ public class MaterialUploadServiceImpl implements MaterialUploadService {
     private List<DocBatchAddItem> buildBatchAddItems(UploadMaterialsRequest request,
                                                       List<UploadedFileInfo> uploaded) {
         List<DocBatchAddItem> items = new ArrayList<>();
+        Map<String, Long> docTypeMap = apiProperties.getDocType();
+        Long dirId = apiProperties.getDirId();
+        Long projectId = apiProperties.getProjectId();
 
         for (UploadedFileInfo info : uploaded) {
-            Long docTypeId = apiProperties.getDocType().get(info.getBusinessType());
+            Long docTypeId = docTypeMap.get(info.getBusinessType());
             if (docTypeId == null) {
                 throw new BusinessException("INVALID_BUSINESS_TYPE",
                         "未知的业务类型：" + info.getBusinessType());
             }
 
+            String reportDate = "finance".equals(info.getBusinessType())
+                    ? request.getReportDate() : null;
+
             DocBatchAddItem item = DocBatchAddItem.builder()
                     .attId(info.getAttId())
-                    .dirId(apiProperties.getDirId())
-                    .docName(info.getFile().getOriginalFilename())
-                    .docSize(info.getFile().getSize())
+                    .dirId(dirId)
+                    .docName(info.getFileName())
+                    .docSize(info.getFileSize())
                     .docTypeId(docTypeId)
                     .extraInfo("{}")
-                    .projectId(apiProperties.getProjectId())
+                    .projectId(projectId)
+                    .reportDate(StringUtils.hasText(reportDate) ? reportDate : null)
                     .build();
-
-            // 财务报表需要传报告日期
-            if ("finance".equals(info.getBusinessType()) && StringUtils.hasText(request.getReportDate())) {
-                item.setReportDate(request.getReportDate());
-            }
 
             items.add(item);
         }
@@ -279,7 +283,9 @@ public class MaterialUploadServiceImpl implements MaterialUploadService {
     }
 
     private String generateTaskId() {
-        return "TASK-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16).toUpperCase();
+        UUID uuid = UUID.randomUUID();
+        return "TASK-" + Long.toHexString(uuid.getMostSignificantBits())
+                + Long.toHexString(uuid.getLeastSignificantBits());
     }
 
     /**
@@ -288,7 +294,8 @@ public class MaterialUploadServiceImpl implements MaterialUploadService {
     @lombok.Value
     private static class UploadedFileInfo {
         String attId;
-        MultipartFile file;
+        String fileName;
+        long fileSize;
         String businessType;
     }
 }

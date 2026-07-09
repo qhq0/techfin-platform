@@ -3,8 +3,7 @@ package com.example.shanxindai;
 import com.example.shanxindai.dto.response.CommonResp;
 import com.example.shanxindai.exception.BusinessException;
 import com.example.shanxindai.exception.FileValidationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,10 +13,9 @@ import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.stream.Collectors;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(FileValidationException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)

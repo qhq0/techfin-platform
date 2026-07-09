@@ -23,8 +23,8 @@ public class UploadMaterialsRequest {
     private String reportDate;
 
     /** 企业财务报表文件列表 */
-    private java.util.List<MultipartFile> financeFiles;
+    private List<MultipartFile> financeFiles;
 
     /** 商业计划书文件列表 */
-    private java.util.List<MultipartFile> businessFiles;
+    private List<MultipartFile> businessFiles;
 }

@@ -25,7 +25,7 @@ public class DocBatchAddResponse {
     /** 响应数据 */
     private DataBody data;
 
-    @lombok.Data
+    @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DataBody {
 
@@ -36,7 +36,7 @@ public class DocBatchAddResponse {
         private List<DocInfo> docList;
     }
 
-    @lombok.Data
+    @Data
     @JsonIgnoreProperties(ignoreUnknown = true)
     public static class DocInfo {
 

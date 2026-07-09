@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -39,21 +40,23 @@ public class FileValidator {
             return;
         }
 
-        List<String> allowedExts = uploadConfig.getAllowedExtensions().get(businessType);
+        long maxFileSize = uploadConfig.getMaxFileSize();
+        Set<String> allowedExts = new HashSet<>(uploadConfig.getAllowedExtensions().get(businessType));
 
         for (MultipartFile file : files) {
             String originalName = file.getOriginalFilename();
+            long fileSize = file.getSize();
 
             // 1. 检查大小
-            if (file.getSize() > uploadConfig.getMaxFileSize()) {
+            if (fileSize > maxFileSize) {
                 throw new FileValidationException(originalName, "FILE_TOO_LARGE",
-                        "超过大小限制（最大 " + uploadConfig.getMaxFileSize() / (1024 * 1024) + "MB），当前大小 "
-                                + file.getSize() / (1024 * 1024) + "MB");
+                        "超过大小限制（最大 " + maxFileSize / (1024 * 1024) + "MB），当前大小 "
+                                + fileSize / (1024 * 1024) + "MB");
             }
 
             // 2. 检查文件扩展名
             String extension = getExtension(originalName);
-            if (extension == null || allowedExts.stream().noneMatch(ext -> ext.equalsIgnoreCase(extension))) {
+            if (extension == null || !allowedExts.contains(extension)) {
                 throw new FileValidationException(originalName, "INVALID_FILE_FORMAT",
                         "文件格式不支持，仅支持 " + String.join(", ", allowedExts));
             }
@@ -62,7 +65,7 @@ public class FileValidator {
             String contentType = file.getContentType();
             if (contentType != null && !ALLOWED_MIME_TYPES.contains(contentType)) {
                 // csv 可能被识别为 text/plain，放宽校验
-                if (!"csv".equalsIgnoreCase(extension)) {
+                if (!"csv".equals(extension)) {
                     throw new FileValidationException(originalName, "INVALID_FILE_FORMAT",
                             "文件类型不合法");
                 }
@@ -71,9 +74,13 @@ public class FileValidator {
     }
 
     private String getExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) {
+        if (fileName == null) {
             return null;
         }
-        return fileName.substring(fileName.lastIndexOf('.') + 1).toLowerCase();
+        int dot = fileName.lastIndexOf('.');
+        if (dot == -1) {
+            return null;
+        }
+        return fileName.substring(dot + 1).toLowerCase();
     }
 }
