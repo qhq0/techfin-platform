@@ -12,41 +12,32 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.example</groupId>
+    <groupId>com.ccb</groupId>
     <artifactId>techfin-platform</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>techfin-platform</name>
-    <description>TechFin Platform - 科技金融平台</description>
+    <description>CCB TechFin Platform - 科技金融平台</description>
 
     <properties>
         <java.version>17</java.version>
     </properties>
 
     <modules>
-        <module>shanxindai</module>
+        <module>techfin-common</module>
+        <module>techfin-sxd</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>com.example</groupId>
-                <artifactId>shanxindai-common</artifactId>
+                <groupId>com.ccb</groupId>
+                <artifactId>techfin-common</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.example</groupId>
-                <artifactId>shanxindai-model</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.example</groupId>
-                <artifactId>shanxindai-service</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.example</groupId>
-                <artifactId>shanxindai-controller</artifactId>
+                <groupId>com.ccb</groupId>
+                <artifactId>techfin-sxd</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

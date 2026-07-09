@@ -1,0 +1,22 @@
+package com.ccb.techfin.sxd.dto.external;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class DocBatchAddItem {
+
+    private String attId;
+    private Long dirId;
+    private String docName;
+    private Long docSize;
+    private Long docTypeId;
+    private String extraInfo;
+    private Long projectId;
+    private String reportDate;
+}
