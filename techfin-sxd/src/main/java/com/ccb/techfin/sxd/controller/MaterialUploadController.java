@@ -1,6 +1,6 @@
 package com.ccb.techfin.sxd.controller;
 
-import com.ccb.techfin.common.dto.response.CommonResp;
+import com.ccb.techfin.common.api.CommonResp;
 import com.ccb.techfin.sxd.dto.request.UploadMaterialsRequest;
 import com.ccb.techfin.sxd.dto.response.UploadMaterialsResponse;
 import com.ccb.techfin.sxd.service.MaterialUploadService;

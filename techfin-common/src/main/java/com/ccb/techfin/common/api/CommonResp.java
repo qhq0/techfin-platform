@@ -1,4 +1,4 @@
-package com.ccb.techfin.common.dto.response;
+package com.ccb.techfin.common.api;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

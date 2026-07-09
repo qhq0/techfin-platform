@@ -1,6 +1,6 @@
 package com.ccb.techfin.common;
 
-import com.ccb.techfin.common.dto.response.CommonResp;
+import com.ccb.techfin.common.api.CommonResp;
 import com.ccb.techfin.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
