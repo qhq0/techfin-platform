@@ -1,6 +1,6 @@
 package com.ccb.techfin.common.exception;
 
-import com.ccb.techfin.common.api.CommonResp;
+import com.ccb.techfin.common.result.CommonResp;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;

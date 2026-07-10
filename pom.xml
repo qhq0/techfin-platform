@@ -25,7 +25,10 @@
 
     <modules>
         <module>techfin-common</module>
-        <module>techfin-app</module>
+        <module>techfin-model</module>
+        <module>techfin-dao</module>
+        <module>techfin-service</module>
+        <module>techfin-controller</module>
     </modules>
 
     <dependencyManagement>
@@ -37,7 +40,22 @@
             </dependency>
             <dependency>
                 <groupId>com.ccb</groupId>
-                <artifactId>techfin-app</artifactId>
+                <artifactId>techfin-model</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ccb</groupId>
+                <artifactId>techfin-dao</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ccb</groupId>
+                <artifactId>techfin-service</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.ccb</groupId>
+                <artifactId>techfin-controller</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>
