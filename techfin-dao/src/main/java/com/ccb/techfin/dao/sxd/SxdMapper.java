@@ -7,9 +7,12 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public interface SxdMapper extends JpaRepository<ApplicationRecord, Long> {
+public interface SxdMapper extends JpaRepository<ApplicationRecord, String> {
 
     boolean existsByCreditCode(String creditCode);
 
+    /**
+     * 根据 taskId 查询申请记录（taskId 即主键，等同于 findById）。
+     */
     Optional<ApplicationRecord> findByTaskId(String taskId);
 }

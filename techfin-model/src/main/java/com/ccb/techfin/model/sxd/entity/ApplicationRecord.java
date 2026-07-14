@@ -14,34 +14,23 @@ import java.util.List;
 public class ApplicationRecord {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "task_id", nullable = false, unique = true, length = 64)
+    @Column(name = "task_id", length = 64)
     private String taskId;
 
     @Column(name = "credit_code", nullable = false, length = 18)
     private String creditCode;
 
-    @Column(name = "customer_no", nullable = false, length = 64)
+    @Column(name = "customer_no", length = 64)
     private String customerNo;
-
-    @Column(name = "report_date", length = 10)
-    private String reportDate;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 32)
     private TaskStatus status;
 
     @ElementCollection
-    @CollectionTable(name = "application_doc", joinColumns = @JoinColumn(name = "application_id"))
-    @Column(name = "doc_id", length = 64)
-    private List<String> docIds = new ArrayList<>();
-
-    @ElementCollection
-    @CollectionTable(name = "application_att", joinColumns = @JoinColumn(name = "application_id"))
-    @Column(name = "att_id", length = 64)
-    private List<String> attIds = new ArrayList<>();
+    @CollectionTable(name = "application_doc", joinColumns = @JoinColumn(name = "task_id"),
+            foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private List<DocEntry> docEntries = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

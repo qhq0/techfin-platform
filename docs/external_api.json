@@ -27,9 +27,9 @@
           "raw": "{\n  \"docId\": 1522659418314964992,\n  \"tableName\": \"dib_manage_y_industry_analysis\"\n}"
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/queryData",
+          "raw": "{{dibUrl}}/api/extract/open/doc/queryData",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -532,9 +532,9 @@
           "raw": ""
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/docTableExtractState/1522659418314964992",
+          "raw": "{{dibUrl}}/api/extract/open/doc/docTableExtractState/1522659418314964992",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -650,9 +650,9 @@
           "raw": ""
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/delete/1522656394616045568",
+          "raw": "{{dibUrl}}/api/extract/open/doc/delete/1522656394616045568",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -700,8 +700,15 @@
               ]
             }
           },
-          "_postman_previewlanguage": "",
-          "header": [],
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "description": "",
+              "type": "text"
+            }
+          ],
           "cookie": [
             {
               "expires": "Invalid Date",
@@ -709,7 +716,7 @@
               "path": ""
             }
           ],
-          "body": "{\r\n    \"data\": true,\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+          "body": "{\n    \"data\": true,\n    \"success\": true,\n    \"code\": \"1\",\n    \"message\": \"操作成功\",\n    \"errorMessage\": null\n}"
         }
       ]
     },
@@ -734,9 +741,9 @@
           "raw": "[\n  {\n    \"attId\": \"1522655358249328640\",\n    \"dirId\": 0,\n    \"docName\": \"商业计划书2\",\n    \"docSize\": 791,\n    \"docTypeId\": 1455619597903695872,\n    \"extraInfo\": \"{}\",\n    \"projectId\": 1521841328915996672,\n    \"reportDate\": \"2025-06-30\"\n  }\n]"
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/batch/add",
+          "raw": "{{dibUrl}}/api/extract/open/doc/batch/add",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -785,8 +792,15 @@
               ]
             }
           },
-          "_postman_previewlanguage": "",
-          "header": [],
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "description": "",
+              "type": "text"
+            }
+          ],
           "cookie": [
             {
               "expires": "Invalid Date",
@@ -794,7 +808,7 @@
               "path": ""
             }
           ],
-          "body": "{\r\n    \"data\": {\r\n        \"invalidDocNames\": null,\r\n        \"docList\": [\r\n            {\r\n                \"id\": \"1522656394616045568\",\r\n                \"docName\": \"商业计划书2\",\r\n                \"projectId\": \"1521841328915996672\",\r\n                \"dirId\": \"0\",\r\n                \"dirIdPath\": null,\r\n                \"docTypeId\": \"1455619597903695872\",\r\n                \"docTypeName\": null,\r\n                \"docTypeIdPath\": \"1279373407439425536\",\r\n                \"attId\": \"1522655358249328640\",\r\n                \"doublePdfId\": null,\r\n                \"txtAttId\": null,\r\n                \"docSize\": 791,\r\n                \"reportDate\": null,\r\n                \"scannedCopyFlag\": false,\r\n                \"extraInfo\": \"{}\",\r\n                \"classifyState\": \"20\",\r\n                \"convertState\": \"U\",\r\n                \"extractState\": \"U\",\r\n                \"verifyState\": \"U\",\r\n                \"auditState\": \"U\",\r\n                \"extractDocCount\": null,\r\n                \"auditDocCount\": null,\r\n                \"totalDocCount\": null,\r\n                \"machineCompletionRate\": 0.0,\r\n                \"completionRate\": 0.0,\r\n                \"addUserId\": \"admin\",\r\n                \"addUserName\": \"系统管理员\",\r\n                \"addTime\": \"2026-07-03 17:32:54\",\r\n                \"updateUserId\": \"admin\",\r\n                \"updateUserName\": \"系统管理员\",\r\n                \"updateTime\": \"2026-07-03 17:32:54\",\r\n                \"osTxtAttId\": null,\r\n                \"osConvertState\": \"U\",\r\n                \"osConvertDuration\": 0\r\n            }\r\n        ]\r\n    },\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+          "body": "{\n    \"data\": {\n        \"invalidDocNames\": null,\n        \"docList\": [\n            {\n                \"id\": \"1522656394616045568\",\n                \"docName\": \"商业计划书2\",\n                \"projectId\": \"1521841328915996672\",\n                \"dirId\": \"0\",\n                \"dirIdPath\": null,\n                \"docTypeId\": \"1455619597903695872\",\n                \"docTypeName\": null,\n                \"docTypeIdPath\": \"1279373407439425536\",\n                \"attId\": \"1522655358249328640\",\n                \"doublePdfId\": null,\n                \"txtAttId\": null,\n                \"docSize\": 791,\n                \"reportDate\": null,\n                \"scannedCopyFlag\": false,\n                \"extraInfo\": \"{}\",\n                \"classifyState\": \"20\",\n                \"convertState\": \"U\",\n                \"extractState\": \"U\",\n                \"verifyState\": \"U\",\n                \"auditState\": \"U\",\n                \"extractDocCount\": null,\n                \"auditDocCount\": null,\n                \"totalDocCount\": null,\n                \"machineCompletionRate\": 0,\n                \"completionRate\": 0,\n                \"addUserId\": \"admin\",\n                \"addUserName\": \"系统管理员\",\n                \"addTime\": \"2026-07-03 17:32:54\",\n                \"updateUserId\": \"admin\",\n                \"updateUserName\": \"系统管理员\",\n                \"updateTime\": \"2026-07-03 17:32:54\",\n                \"osTxtAttId\": null,\n                \"osConvertState\": \"U\",\n                \"osConvertDuration\": 0\n            }\n        ]\n    },\n    \"success\": true,\n    \"code\": \"1\",\n    \"message\": \"操作成功\",\n    \"errorMessage\": null\n}"
         }
       ]
     },
@@ -819,9 +833,9 @@
           "raw": "{\n  \"attId\": \"1522260339629744128\",\n  \"dirId\": 0,\n  \"docName\": \"商业计划书\",\n  \"docSize\": 786,\n  \"docTypeId\": 1455619597903695872,\n  \"extraInfo\": \"{}\",\n  \"projectId\": 1521841328915996672,\n  \"reportDate\": \"2025-06-30\"\n}"
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/add",
+          "raw": "{{dibUrl}}/api/extract/open/doc/add",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -855,9 +869,9 @@
           "raw": "{ \"bottomText\": \"\", \"docId\": 0, \"pageNum\": \"\", \"text\": \"\", \"textsOfCurrentRow\": [], \"topText\": \"\" }"
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/docTraceSource",
+          "raw": "{{dibUrl}}/api/extract/open/doc/docTraceSource",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -882,9 +896,9 @@
           }
         ],
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/get/1522204279569448960",
+          "raw": "{{dibUrl}}/api/extract/open/doc/get/1522204279569448960",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -957,9 +971,9 @@
           "raw": "{\n  \"busId\": 1469278973613821952,\n  \"docId\": 0,\n  \"docName\": \"商业计划书-发展战略情况\",\n  \"hasAuthorized\": true\n}"
         },
         "url": {
-          "raw": "{{url}}/api/extract/open/doc/classify",
+          "raw": "{{dibUrl}}/api/extract/open/doc/classify",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -1040,9 +1054,9 @@
           ]
         },
         "url": {
-          "raw": "{{url}}/api/mdm/open/att/upload",
+          "raw": "{{dibUrl}}/api/mdm/open/att/upload",
           "host": [
-            "{{url}}"
+            "{{dibUrl}}"
           ],
           "path": [
             "api",
@@ -1090,8 +1104,15 @@
               ]
             }
           },
-          "_postman_previewlanguage": "",
-          "header": [],
+          "_postman_previewlanguage": "json",
+          "header": [
+            {
+              "key": "Content-Type",
+              "value": "application/json",
+              "description": "",
+              "type": "text"
+            }
+          ],
           "cookie": [
             {
               "expires": "Invalid Date",
@@ -1099,7 +1120,7 @@
               "path": ""
             }
           ],
-          "body": "{\r\n    \"data\": \"1522260339629744128\",\r\n    \"success\": true,\r\n    \"code\": \"1\",\r\n    \"message\": \"操作成功\",\r\n    \"errorMessage\": null\r\n}"
+          "body": "{\n    \"data\": \"1522260339629744128\",\n    \"success\": true,\n    \"code\": \"1\",\n    \"message\": \"操作成功\",\n    \"errorMessage\": null\n}"
         }
       ]
     }

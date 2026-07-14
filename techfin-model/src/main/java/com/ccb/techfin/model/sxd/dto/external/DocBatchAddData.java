@@ -1,0 +1,17 @@
+package com.ccb.techfin.model.sxd.dto.external;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.Data;
+
+import java.util.List;
+
+/**
+ * 文档批量新增（doc/batch/add）返回的 data 结构。
+ */
+@Data
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class DocBatchAddData {
+
+    private List<String> invalidDocNames;
+    private List<DocInfo> docList;
+}

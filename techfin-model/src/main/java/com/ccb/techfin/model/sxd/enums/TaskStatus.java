@@ -1,7 +1,8 @@
 package com.ccb.techfin.model.sxd.enums;
 
 public enum TaskStatus {
-    PENDING_ANALYSIS("Step 1 Completed"),
+    DRAFT("Draft - Attachments Uploaded"),
+    PENDING_ANALYSIS("Pending Analysis"),
     ANALYSIS_IN_PROGRESS("Analysis In Progress"),
     COMPLETED("Completed"),
     REJECTED("Rejected");

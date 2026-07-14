@@ -1,19 +1,22 @@
 package com.ccb.techfin.service.sxd.impl;
 
 import com.ccb.techfin.common.exception.BusinessException;
+import com.ccb.techfin.dao.sxd.AttachmentRepository;
 import com.ccb.techfin.dao.sxd.SxdMapper;
-import com.ccb.techfin.model.sxd.dto.external.AttachmentUploadResponse;
+import com.ccb.techfin.model.sxd.dto.external.DocBatchAddData;
 import com.ccb.techfin.model.sxd.dto.external.DocBatchAddItem;
-import com.ccb.techfin.model.sxd.dto.external.DocBatchAddResponse;
-import com.ccb.techfin.model.sxd.dto.request.UploadMaterialsRequest;
+import com.ccb.techfin.model.sxd.dto.external.ExternalResponse;
+import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
+import com.ccb.techfin.model.sxd.dto.response.FileUploadResult;
 import com.ccb.techfin.model.sxd.dto.response.UploadMaterialsResponse;
+import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
 import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
+import com.ccb.techfin.model.sxd.entity.DocEntry;
 import com.ccb.techfin.model.sxd.enums.TaskStatus;
 import com.ccb.techfin.service.sxd.SxdService;
 import com.ccb.techfin.service.sxd.config.ApiProperties;
 import com.ccb.techfin.service.sxd.validator.FileValidator;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.*;
@@ -25,10 +28,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -37,97 +37,144 @@ import java.util.stream.Collectors;
 public class SxdServiceImpl implements SxdService {
 
     private final SxdMapper sxdMapper;
+    private final AttachmentRepository attachmentRepository;
     private final FileValidator fileValidator;
     private final ApiProperties apiProperties;
     private final RestTemplate restTemplate;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public UploadMaterialsResponse uploadMaterials(UploadMaterialsRequest request) {
+    public FileUploadResult uploadFinanceFile(MultipartFile file) {
+        fileValidator.validate(Collections.singletonList(file), "finance");
+        String token = apiProperties.getDefaultToken();
+        String attId = uploadAttachment(file, token);
 
-        validateRequiredParams(request);
+        ApplicationAttachment record = new ApplicationAttachment();
+        record.setAttId(attId);
+        record.setFileName(file.getOriginalFilename());
+        record.setFileSize(file.getSize());
+        record.setBusinessType("finance");
+        attachmentRepository.save(record);
+
+        log.info("Finance file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
+        return FileUploadResult.builder()
+                .attId(attId)
+                .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FileUploadResult uploadBusinessFile(MultipartFile file) {
+        fileValidator.validate(Collections.singletonList(file), "business");
+        String token = apiProperties.getDefaultToken();
+        String attId = uploadAttachment(file, token);
+
+        ApplicationAttachment record = new ApplicationAttachment();
+        record.setAttId(attId);
+        record.setFileName(file.getOriginalFilename());
+        record.setFileSize(file.getSize());
+        record.setBusinessType("business");
+        attachmentRepository.save(record);
+
+        log.info("Business file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
+        return FileUploadResult.builder()
+                .attId(attId)
+                .build();
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public UploadMaterialsResponse submitMaterials(SubmitMaterialsRequest request) {
+        validateRequiredParams(request.getCreditCode(), request.getCustomerNo());
         checkCreditCodeUnique(request.getCreditCode());
 
-        fileValidator.validate(request.getFinanceFiles(), "finance");
-        fileValidator.validate(request.getBusinessFiles(), "business");
+        // 从请求体收集文件项，标记 businessType
+        List<SubmitFileMeta> allItems = new ArrayList<>();
+        if (request.getFinanceFiles() != null) {
+            for (SubmitMaterialsRequest.SubmitFileItem f : request.getFinanceFiles()) {
+                allItems.add(new SubmitFileMeta(f.getAttId(), "finance", f.getReportDate()));
+            }
+        }
+        if (request.getBusinessFiles() != null) {
+            for (SubmitMaterialsRequest.SubmitFileItem f : request.getBusinessFiles()) {
+                allItems.add(new SubmitFileMeta(f.getAttId(), "business", null));
+            }
+        }
+        if (allItems.isEmpty()) {
+            throw new BusinessException("NO_FILES", "请至少提供一个文件");
+        }
 
+        String batchTaskId = generateTaskId();
         String token = apiProperties.getDefaultToken();
-        List<UploadedFileInfo> uploaded = new ArrayList<>();
+
+        // 创建申请记录（以 taskId 为主键）
+        ApplicationRecord record = new ApplicationRecord();
+        record.setTaskId(batchTaskId);
+        record.setCreditCode(request.getCreditCode());
+        record.setCustomerNo(request.getCustomerNo());
+        record.setStatus(TaskStatus.PENDING_ANALYSIS);
+        sxdMapper.save(record);
 
         try {
-            uploadFiles(request.getFinanceFiles(), "finance", token, uploaded);
-            uploadFiles(request.getBusinessFiles(), "business", token, uploaded);
-
-            if (uploaded.isEmpty()) {
-                throw new BusinessException("NO_FILES", "请至少上传一个文件");
-            }
-
-            List<DocBatchAddItem> batchItems = buildBatchAddItems(request, uploaded);
-            DocBatchAddResponse batchResponse = batchAddDocs(batchItems, token);
-
+            // 构建批量新增参数（从 application_att 查文件名和大小）
+            List<DocBatchAddItem> batchItems = buildBatchAddItems(allItems);
+            ExternalResponse batchResponse = batchAddDocs(batchItems, token);
             if (!batchResponse.isSuccess() || batchResponse.getData() == null) {
-                throw new BusinessException("BATCH_ADD_FAILED", "资料批量新增失败");
+                throw new BusinessException("BATCH_ADD_FAILED",
+                        "申请记录 " + batchTaskId + " 资料批量新增失败");
             }
 
-            if (batchResponse.getData().getInvalidDocNames() != null
-                    && !batchResponse.getData().getInvalidDocNames().isEmpty()) {
-                log.warn("Some documents failed to add: {}", batchResponse.getData().getInvalidDocNames());
+            DocBatchAddData batchData = batchResponse.getDataAs(DocBatchAddData.class);
+            if (batchData.getInvalidDocNames() != null
+                    && !batchData.getInvalidDocNames().isEmpty()) {
+                log.warn("Some documents failed to add for taskId={}: {}",
+                        batchTaskId, batchData.getInvalidDocNames());
             }
 
-            List<String> docIds = batchResponse.getData().getDocList().stream()
-                    .map(DocBatchAddResponse.DocInfo::getId)
+            // 通过 attId 匹配请求体中的 reportDate 和 businessType，回填 DocEntry
+            Map<String, SubmitFileMeta> itemIndex = allItems.stream()
+                    .collect(Collectors.toMap(i -> i.attId, i -> i, (a, b) -> a));
+            List<DocEntry> docEntries = batchData.getDocList().stream()
+                    .map(doc -> {
+                        SubmitFileMeta matched = itemIndex.get(doc.getAttId());
+                        return new DocEntry(
+                                doc.getId(),
+                                matched != null ? matched.businessType : null,
+                                matched != null ? matched.reportDate : null);
+                    })
                     .collect(Collectors.toList());
 
-            List<String> attIds = uploaded.stream()
-                    .map(UploadedFileInfo::getAttId)
-                    .collect(Collectors.toList());
-
-            ApplicationRecord record = new ApplicationRecord();
-            record.setTaskId(generateTaskId());
-            record.setCreditCode(request.getCreditCode());
-            record.setCustomerNo(request.getCustomerNo());
-            record.setReportDate(request.getReportDate());
-            record.setStatus(TaskStatus.PENDING_ANALYSIS);
-            record.setDocIds(docIds);
-            record.setAttIds(attIds);
+            record.setDocEntries(docEntries);
             sxdMapper.save(record);
 
-            log.info("Application record created: taskId={}, creditCode={}, docIds={}",
-                    record.getTaskId(), record.getCreditCode(), docIds);
+            log.info("Application record submitted: taskId={}, creditCode={}, docCount={}",
+                    batchTaskId, record.getCreditCode(), docEntries.size());
 
             return UploadMaterialsResponse.builder()
-                    .taskId(record.getTaskId())
-                    .message("材料上传成功，状态：" + record.getStatus().getDescription())
+                    .taskId(batchTaskId)
+                    .submittedCount(1)
+                    .message("资料提交成功")
+                    .failedIds(Collections.emptyList())
                     .build();
 
-        } catch (Exception e) {
-            log.error("Upload materials failed after uploading {} files, manual cleanup may be needed",
-                    uploaded.size(), e);
+        } catch (BusinessException e) {
+            log.warn("Submission failed for taskId={}: {}", batchTaskId, e.getMessage());
             throw e;
+        } catch (Exception e) {
+            log.error("Unexpected error submitting taskId={}", batchTaskId, e);
+            throw new BusinessException("BATCH_ADD_FAILED",
+                    "资料批量新增异常：" + e.getMessage());
         }
     }
 
-    private void uploadFiles(List<MultipartFile> files, String businessType, String token,
-                             List<UploadedFileInfo> uploaded) {
-        if (files == null) {
-            return;
-        }
-        for (MultipartFile file : files) {
-            String attId = uploadAttachment(file, token);
-            String fileName = file.getOriginalFilename();
-            uploaded.add(new UploadedFileInfo(attId, fileName, file.getSize(), businessType));
-            log.debug("{} file uploaded: name={}, attId={}", businessType, fileName, attId);
-        }
-    }
-
-    private void validateRequiredParams(UploadMaterialsRequest request) {
-        if (!StringUtils.hasText(request.getCreditCode())) {
+    private void validateRequiredParams(String creditCode, String customerNo) {
+        if (!StringUtils.hasText(creditCode)) {
             throw new BusinessException("PARAM_MISSING", "统一社会信用代码不能为空");
         }
-        if (!StringUtils.hasText(request.getCustomerNo())) {
+        if (!StringUtils.hasText(customerNo)) {
             throw new BusinessException("PARAM_MISSING", "客户编号不能为空");
         }
-        if (!request.getCreditCode().matches("^[0-9A-Z]{18}$")) {
+        if (!creditCode.matches("^[0-9A-Z]{18}$")) {
             throw new BusinessException("INVALID_CREDIT_CODE", "统一社会信用代码格式不正确，必须为18位数字或大写字母");
         }
     }
@@ -139,7 +186,6 @@ public class SxdServiceImpl implements SxdService {
             if (StringUtils.hasText(token)) {
                 headers.set("c1-token", token);
             }
-
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
                 @Override
@@ -148,23 +194,19 @@ public class SxdServiceImpl implements SxdService {
                 }
             };
             body.add("file", fileResource);
-
             HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
-
-            ResponseEntity<AttachmentUploadResponse> response = restTemplate.exchange(
+            ResponseEntity<ExternalResponse> response = restTemplate.exchange(
                     apiProperties.getAttachmentUploadUrl(),
                     HttpMethod.POST,
                     requestEntity,
-                    AttachmentUploadResponse.class);
-
-            AttachmentUploadResponse respBody = response.getBody();
+                    ExternalResponse.class);
+            ExternalResponse respBody = response.getBody();
             if (respBody == null || !respBody.isSuccess()) {
                 String msg = respBody != null ? respBody.getMessage() : "未知错误";
                 throw new BusinessException("ATTACH_UPLOAD_FAILED",
                         "文件 [" + file.getOriginalFilename() + "] 上传失败：" + msg);
             }
-
-            return respBody.getData();
+            return (String) respBody.getData();
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -174,61 +216,56 @@ public class SxdServiceImpl implements SxdService {
         }
     }
 
-    private List<DocBatchAddItem> buildBatchAddItems(UploadMaterialsRequest request,
-                                                      List<UploadedFileInfo> uploaded) {
-        List<DocBatchAddItem> items = new ArrayList<>();
+    /**
+     * 根据请求中的文件项列表构建批量新增请求参数。
+     * fileName/fileSize 从 application_att 表查询。
+     */
+    private List<DocBatchAddItem> buildBatchAddItems(List<SubmitFileMeta> items) {
+        List<DocBatchAddItem> result = new ArrayList<>();
         Map<String, Long> docTypeMap = apiProperties.getDocType();
         Long dirId = apiProperties.getDirId();
         Long projectId = apiProperties.getProjectId();
-
-        for (UploadedFileInfo info : uploaded) {
-            Long docTypeId = docTypeMap.get(info.getBusinessType());
+        for (SubmitFileMeta item : items) {
+            Long docTypeId = docTypeMap.get(item.businessType);
             if (docTypeId == null) {
                 throw new BusinessException("INVALID_BUSINESS_TYPE",
-                        "未知的业务类型：" + info.getBusinessType());
+                        "未知的业务类型：" + item.businessType);
             }
-
-            String reportDate = "finance".equals(info.getBusinessType())
-                    ? request.getReportDate() : null;
-
-            DocBatchAddItem item = DocBatchAddItem.builder()
-                    .attId(info.getAttId())
+            // 从 application_att 查询文件元信息
+            ApplicationAttachment att = attachmentRepository.findByAttId(item.attId)
+                    .orElseThrow(() -> new BusinessException("ATTACH_NOT_FOUND",
+                            "附件 " + item.attId + " 不存在，请重新上传"));
+            result.add(DocBatchAddItem.builder()
+                    .attId(item.attId)
                     .dirId(dirId)
-                    .docName(info.getFileName())
-                    .docSize(info.getFileSize())
+                    .docName(att.getFileName())
+                    .docSize(att.getFileSize())
                     .docTypeId(docTypeId)
                     .extraInfo("{}")
                     .projectId(projectId)
-                    .reportDate(StringUtils.hasText(reportDate) ? reportDate : null)
-                    .build();
-
-            items.add(item);
+                    .reportDate(item.reportDate)
+                    .build());
         }
-
-        return items;
+        return result;
     }
 
-    private DocBatchAddResponse batchAddDocs(List<DocBatchAddItem> items, String token) {
+    private ExternalResponse batchAddDocs(List<DocBatchAddItem> items, String token) {
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             if (StringUtils.hasText(token)) {
                 headers.set("c1-token", token);
             }
-
             HttpEntity<List<DocBatchAddItem>> requestEntity = new HttpEntity<>(items, headers);
-
-            ResponseEntity<DocBatchAddResponse> response = restTemplate.exchange(
+            ResponseEntity<ExternalResponse> response = restTemplate.exchange(
                     apiProperties.getDocBatchAddUrl(),
                     HttpMethod.POST,
                     requestEntity,
-                    DocBatchAddResponse.class);
-
-            DocBatchAddResponse respBody = response.getBody();
+                    ExternalResponse.class);
+            ExternalResponse respBody = response.getBody();
             if (respBody == null) {
                 throw new BusinessException("BATCH_ADD_FAILED", "资料批量新增接口返回为空");
             }
-
             return respBody;
         } catch (BusinessException e) {
             throw e;
@@ -245,17 +282,33 @@ public class SxdServiceImpl implements SxdService {
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean deleteAttachment(String attId) {
+        if (!StringUtils.hasText(attId)) {
+            return false;
+        }
+        Optional<ApplicationAttachment> existing = attachmentRepository.findByAttId(attId);
+        if (existing.isEmpty()) {
+            log.warn("Attachment not found for deletion: attId={}", attId);
+            return false;
+        }
+        attachmentRepository.deleteByAttId(attId);
+        log.info("Attachment deleted: attId={}", attId);
+        return true;
+    }
+
     private String generateTaskId() {
         UUID uuid = UUID.randomUUID();
         return "TASK-" + String.format("%016x%016x",
                 uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 
-    @Value
-    private static class UploadedFileInfo {
-        String attId;
-        String fileName;
-        long fileSize;
-        String businessType;
+    /** 提交时从请求体解析的文件项（attId + businessType + reportDate） */
+    @lombok.AllArgsConstructor
+    private static class SubmitFileMeta {
+        final String attId;
+        final String businessType;
+        final String reportDate;
     }
 }
