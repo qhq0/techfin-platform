@@ -5,5 +5,5 @@ import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface AttachmentRepository extends BaseMapper<ApplicationAttachment> {
+public interface AttachmentMapper extends BaseMapper<ApplicationAttachment> {
 }

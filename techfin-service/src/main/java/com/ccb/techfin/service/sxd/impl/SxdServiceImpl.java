@@ -2,7 +2,7 @@ package com.ccb.techfin.service.sxd.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ccb.techfin.common.exception.BusinessException;
-import com.ccb.techfin.dao.sxd.AttachmentRepository;
+import com.ccb.techfin.dao.sxd.AttachmentMapper;
 import com.ccb.techfin.dao.sxd.DocEntryMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
 import com.ccb.techfin.model.sxd.dto.external.DocBatchAddData;
@@ -41,7 +41,7 @@ import java.util.stream.Collectors;
 public class SxdServiceImpl implements SxdService {
 
     private final SxdMapper sxdMapper;
-    private final AttachmentRepository attachmentRepository;
+    private final AttachmentMapper attachmentMapper;
     private final DocEntryMapper docEntryMapper;
     private final FileValidator fileValidator;
     private final ApiProperties apiProperties;
@@ -59,7 +59,7 @@ public class SxdServiceImpl implements SxdService {
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
         record.setBusinessType("finance");
-        attachmentRepository.insert(record);
+        attachmentMapper.insert(record);
 
         log.info("Finance file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
         return FileUploadResult.builder()
@@ -79,7 +79,7 @@ public class SxdServiceImpl implements SxdService {
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
         record.setBusinessType("business");
-        attachmentRepository.insert(record);
+        attachmentMapper.insert(record);
 
         log.info("Business file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
         return FileUploadResult.builder()
@@ -237,7 +237,7 @@ public class SxdServiceImpl implements SxdService {
                         "未知的业务类型：" + item.businessType);
             }
             // 从 application_att 查询文件元信息
-            ApplicationAttachment att = attachmentRepository.selectOne(
+            ApplicationAttachment att = attachmentMapper.selectOne(
                     new LambdaQueryWrapper<ApplicationAttachment>()
                             .eq(ApplicationAttachment::getAttId, item.attId));
             if (att == null) {
@@ -300,7 +300,7 @@ public class SxdServiceImpl implements SxdService {
         if (!StringUtils.hasText(attId)) {
             return false;
         }
-        int deleted = attachmentRepository.delete(
+        int deleted = attachmentMapper.delete(
                 new LambdaQueryWrapper<ApplicationAttachment>()
                         .eq(ApplicationAttachment::getAttId, attId));
         boolean success = deleted > 0;
