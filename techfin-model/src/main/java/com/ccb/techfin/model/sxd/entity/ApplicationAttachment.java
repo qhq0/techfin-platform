@@ -1,6 +1,9 @@
 package com.ccb.techfin.model.sxd.entity;
 
-import jakarta.persistence.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,27 +15,25 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Entity
-@Table(name = "application_att")
+@TableName("application_att")
 public class ApplicationAttachment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @TableId(type = IdType.AUTO)
     private Long id;
 
     /** 附件上传返回的附件 ID */
-    @Column(name = "att_id", nullable = false, length = 64)
+    @TableField("att_id")
     private String attId;
 
     /** 上传时的原始文件名 */
-    @Column(name = "file_name", length = 255)
+    @TableField("file_name")
     private String fileName;
 
     /** 文件大小（字节） */
-    @Column(name = "file_size")
+    @TableField("file_size")
     private Long fileSize;
 
     /** 业务类型（finance / business） */
-    @Column(name = "business_type", length = 32)
+    @TableField("business_type")
     private String businessType;
 }

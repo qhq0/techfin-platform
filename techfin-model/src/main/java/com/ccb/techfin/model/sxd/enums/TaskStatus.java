@@ -1,6 +1,8 @@
 package com.ccb.techfin.model.sxd.enums;
 
-public enum TaskStatus {
+import com.baomidou.mybatisplus.annotation.IEnum;
+
+public enum TaskStatus implements IEnum<String> {
     DRAFT("Draft - Attachments Uploaded"),
     PENDING_ANALYSIS("Pending Analysis"),
     ANALYSIS_IN_PROGRESS("Analysis In Progress"),
@@ -11,6 +13,11 @@ public enum TaskStatus {
 
     TaskStatus(String description) {
         this.description = description;
+    }
+
+    @Override
+    public String getValue() {
+        return name();
     }
 
     public String getDescription() {

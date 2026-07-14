@@ -1,10 +1,13 @@
 package com.ccb.techfin.service.sxd.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ccb.techfin.common.exception.BusinessException;
 import com.ccb.techfin.dao.sxd.AttachmentRepository;
+import com.ccb.techfin.dao.sxd.DocEntryMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
 import com.ccb.techfin.model.sxd.dto.external.DocBatchAddData;
 import com.ccb.techfin.model.sxd.dto.external.DocBatchAddItem;
+import com.ccb.techfin.model.sxd.dto.external.DocInfo;
 import com.ccb.techfin.model.sxd.dto.external.ExternalResponse;
 import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
 import com.ccb.techfin.model.sxd.dto.response.FileUploadResult;
@@ -28,6 +31,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -38,6 +42,7 @@ public class SxdServiceImpl implements SxdService {
 
     private final SxdMapper sxdMapper;
     private final AttachmentRepository attachmentRepository;
+    private final DocEntryMapper docEntryMapper;
     private final FileValidator fileValidator;
     private final ApiProperties apiProperties;
     private final RestTemplate restTemplate;
@@ -54,7 +59,7 @@ public class SxdServiceImpl implements SxdService {
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
         record.setBusinessType("finance");
-        attachmentRepository.save(record);
+        attachmentRepository.insert(record);
 
         log.info("Finance file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
         return FileUploadResult.builder()
@@ -74,7 +79,7 @@ public class SxdServiceImpl implements SxdService {
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
         record.setBusinessType("business");
-        attachmentRepository.save(record);
+        attachmentRepository.insert(record);
 
         log.info("Business file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
         return FileUploadResult.builder()
@@ -108,12 +113,15 @@ public class SxdServiceImpl implements SxdService {
         String token = apiProperties.getDefaultToken();
 
         // 创建申请记录（以 taskId 为主键）
+        LocalDateTime now = LocalDateTime.now();
         ApplicationRecord record = new ApplicationRecord();
         record.setTaskId(batchTaskId);
         record.setCreditCode(request.getCreditCode());
         record.setCustomerNo(request.getCustomerNo());
         record.setStatus(TaskStatus.PENDING_ANALYSIS);
-        sxdMapper.save(record);
+        record.setCreatedAt(now);
+        record.setUpdatedAt(now);
+        sxdMapper.insert(record);
 
         try {
             // 构建批量新增参数（从 application_att 查文件名和大小）
@@ -131,24 +139,21 @@ public class SxdServiceImpl implements SxdService {
                         batchTaskId, batchData.getInvalidDocNames());
             }
 
-            // 通过 attId 匹配请求体中的 reportDate 和 businessType，回填 DocEntry
+            // 通过 attId 匹配请求体中的 reportDate 和 businessType，创建 DocEntry 并插入
             Map<String, SubmitFileMeta> itemIndex = allItems.stream()
                     .collect(Collectors.toMap(i -> i.attId, i -> i, (a, b) -> a));
-            List<DocEntry> docEntries = batchData.getDocList().stream()
-                    .map(doc -> {
-                        SubmitFileMeta matched = itemIndex.get(doc.getAttId());
-                        return new DocEntry(
-                                doc.getId(),
-                                matched != null ? matched.businessType : null,
-                                matched != null ? matched.reportDate : null);
-                    })
-                    .collect(Collectors.toList());
-
-            record.setDocEntries(docEntries);
-            sxdMapper.save(record);
+            for (DocInfo doc : batchData.getDocList()) {
+                SubmitFileMeta matched = itemIndex.get(doc.getAttId());
+                DocEntry entry = new DocEntry(
+                        doc.getId(),
+                        batchTaskId,
+                        matched != null ? matched.businessType : null,
+                        matched != null ? matched.reportDate : null);
+                docEntryMapper.insert(entry);
+            }
 
             log.info("Application record submitted: taskId={}, creditCode={}, docCount={}",
-                    batchTaskId, record.getCreditCode(), docEntries.size());
+                    batchTaskId, record.getCreditCode(), batchData.getDocList().size());
 
             return UploadMaterialsResponse.builder()
                     .taskId(batchTaskId)
@@ -232,9 +237,13 @@ public class SxdServiceImpl implements SxdService {
                         "未知的业务类型：" + item.businessType);
             }
             // 从 application_att 查询文件元信息
-            ApplicationAttachment att = attachmentRepository.findByAttId(item.attId)
-                    .orElseThrow(() -> new BusinessException("ATTACH_NOT_FOUND",
-                            "附件 " + item.attId + " 不存在，请重新上传"));
+            ApplicationAttachment att = attachmentRepository.selectOne(
+                    new LambdaQueryWrapper<ApplicationAttachment>()
+                            .eq(ApplicationAttachment::getAttId, item.attId));
+            if (att == null) {
+                throw new BusinessException("ATTACH_NOT_FOUND",
+                        "附件 " + item.attId + " 不存在，请重新上传");
+            }
             result.add(DocBatchAddItem.builder()
                     .attId(item.attId)
                     .dirId(dirId)
@@ -276,7 +285,10 @@ public class SxdServiceImpl implements SxdService {
     }
 
     private void checkCreditCodeUnique(String creditCode) {
-        if (sxdMapper.existsByCreditCode(creditCode)) {
+        Long count = sxdMapper.selectCount(
+                new LambdaQueryWrapper<ApplicationRecord>()
+                        .eq(ApplicationRecord::getCreditCode, creditCode));
+        if (count > 0) {
             throw new BusinessException("DUPLICATE_CREDIT_CODE",
                     "统一社会信用代码 [" + creditCode + "] 已存在，请勿重复建档");
         }
@@ -288,14 +300,16 @@ public class SxdServiceImpl implements SxdService {
         if (!StringUtils.hasText(attId)) {
             return false;
         }
-        Optional<ApplicationAttachment> existing = attachmentRepository.findByAttId(attId);
-        if (existing.isEmpty()) {
+        int deleted = attachmentRepository.delete(
+                new LambdaQueryWrapper<ApplicationAttachment>()
+                        .eq(ApplicationAttachment::getAttId, attId));
+        boolean success = deleted > 0;
+        if (success) {
+            log.info("Attachment deleted: attId={}", attId);
+        } else {
             log.warn("Attachment not found for deletion: attId={}", attId);
-            return false;
         }
-        attachmentRepository.deleteByAttId(attId);
-        log.info("Attachment deleted: attId={}", attId);
-        return true;
+        return success;
     }
 
     private String generateTaskId() {
