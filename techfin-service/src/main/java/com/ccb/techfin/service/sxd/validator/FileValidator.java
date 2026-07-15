@@ -29,6 +29,22 @@ public class FileValidator {
             "image/png"
     );
 
+    /**
+     * 校验文件（合并所有业务类型的扩展名，适用于单一上传接口）。
+     */
+    public void validate(List<MultipartFile> files) {
+        if (files == null || files.isEmpty()) {
+            return;
+        }
+
+        long maxFileSize = uploadConfig.getMaxFileSize();
+        Set<String> allowedExts = new HashSet<>();
+        for (List<String> exts : uploadConfig.getAllowedExtensions().values()) {
+            allowedExts.addAll(exts);
+        }
+        doValidate(files, maxFileSize, allowedExts);
+    }
+
     public void validate(List<MultipartFile> files, String businessType) {
         if (files == null || files.isEmpty()) {
             return;
@@ -36,6 +52,10 @@ public class FileValidator {
 
         long maxFileSize = uploadConfig.getMaxFileSize();
         Set<String> allowedExts = new HashSet<>(uploadConfig.getAllowedExtensions().get(businessType));
+        doValidate(files, maxFileSize, allowedExts);
+    }
+
+    private void doValidate(List<MultipartFile> files, long maxFileSize, Set<String> allowedExts) {
 
         for (MultipartFile file : files) {
             String originalName = file.getOriginalFilename();

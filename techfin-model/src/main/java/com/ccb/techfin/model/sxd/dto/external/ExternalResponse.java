@@ -2,7 +2,10 @@ package com.ccb.techfin.model.sxd.dto.external;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.CollectionType;
 import lombok.Data;
+
+import java.util.List;
 
 /**
  * 统一的外部接口响应包装类。
@@ -33,5 +36,17 @@ ExternalResponse {
             return type.cast(data);
         }
         return MAPPER.convertValue(data, type);
+    }
+
+    /**
+     * 将 data 字段（JSON 数组）转换为指定元素类型的 List。
+     */
+    public <T> List<T> getDataAsList(Class<T> elementType) {
+        if (data == null) {
+            return null;
+        }
+        CollectionType listType = MAPPER.getTypeFactory()
+                .constructCollectionType(List.class, elementType);
+        return MAPPER.convertValue(data, listType);
     }
 }

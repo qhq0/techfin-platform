@@ -32,8 +32,4 @@ public class ApplicationAttachment {
     /** 文件大小（字节） */
     @TableField("file_size")
     private Long fileSize;
-
-    /** 业务类型（finance / business） */
-    @TableField("business_type")
-    private String businessType;
 }

@@ -13,6 +13,8 @@ public class ApiProperties {
 
     private String attachmentUploadUrl;
     private String docBatchAddUrl;
+    private String docDetailUrl;
+    private String docQueryDataUrl;
     private Long projectId;
     private Long dirId = 0L;
     private Map<String, Long> docType;

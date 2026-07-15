@@ -7,11 +7,15 @@ import com.ccb.techfin.dao.sxd.DocEntryMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
 import com.ccb.techfin.model.sxd.dto.external.DocBatchAddData;
 import com.ccb.techfin.model.sxd.dto.external.DocBatchAddItem;
+import com.ccb.techfin.model.sxd.dto.external.DocDetailData;
 import com.ccb.techfin.model.sxd.dto.external.DocInfo;
 import com.ccb.techfin.model.sxd.dto.external.ExternalResponse;
+import com.ccb.techfin.model.sxd.dto.request.ConfirmControllerRequest;
 import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
-import com.ccb.techfin.model.sxd.dto.response.FileUploadResult;
-import com.ccb.techfin.model.sxd.dto.response.UploadMaterialsResponse;
+import com.ccb.techfin.model.sxd.dto.external.ExtractQueryDataRecord;
+import com.ccb.techfin.model.sxd.dto.external.ExtractQueryDataRequest;
+import com.ccb.techfin.model.sxd.dto.response.ExtractDataResponse;
+import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
 import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
 import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
 import com.ccb.techfin.model.sxd.entity.DocEntry;
@@ -33,6 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -47,10 +52,37 @@ public class SxdServiceImpl implements SxdService {
     private final ApiProperties apiProperties;
     private final RestTemplate restTemplate;
 
+    /** 商业计划书提取数据查询的 tableName 列表（按展示顺序） */
+    private static final List<String> BUSINESS_PLAN_TABLES = Collections.unmodifiableList(
+            Arrays.asList(
+                    "dib_manage_company_profile",
+                    "dib_director_keyresume",
+                    "dib_manage_business_and_products",
+                    "dib_manage_business_circumstance",
+                    "dib_company_qualification",
+                    "dib_manage_progressiveness_description",
+                    "dib_manage_competitive_advantages",
+                    "dib_manage_development_strategy",
+                    "dib_manage_y_industry_analysis"
+            ));
+
+    /** 每个 tableName 对应的文本提取函数 */
+    private static final Map<String, Function<ExtractQueryDataRecord, String>> TEXT_EXTRACTORS = Map.of(
+            "dib_manage_company_profile", ExtractQueryDataRecord::getCompanyProfileText,
+            "dib_director_keyresume", ExtractQueryDataRecord::getResume,
+            "dib_manage_business_and_products", ExtractQueryDataRecord::getBusinessAndProductsText,
+            "dib_manage_business_circumstance", ExtractQueryDataRecord::getText,
+            "dib_company_qualification", ExtractQueryDataRecord::getText,
+            "dib_manage_progressiveness_description", ExtractQueryDataRecord::getProgressivenessText,
+            "dib_manage_competitive_advantages", ExtractQueryDataRecord::getCompetitivenessText,
+            "dib_manage_development_strategy", ExtractQueryDataRecord::getStrategyText,
+            "dib_manage_y_industry_analysis", ExtractQueryDataRecord::getText
+    );
+
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public FileUploadResult uploadFinanceFile(MultipartFile file) {
-        fileValidator.validate(Collections.singletonList(file), "finance");
+    public String uploadFile(MultipartFile file) {
+        fileValidator.validate(java.util.Collections.singletonList(file));
         String token = apiProperties.getDefaultToken();
         String attId = uploadAttachment(file, token);
 
@@ -58,52 +90,26 @@ public class SxdServiceImpl implements SxdService {
         record.setAttId(attId);
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
-        record.setBusinessType("finance");
         attachmentMapper.insert(record);
 
-        log.info("Finance file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
-        return FileUploadResult.builder()
-                .attId(attId)
-                .build();
+        log.info("File uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
+        return attId;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public FileUploadResult uploadBusinessFile(MultipartFile file) {
-        fileValidator.validate(Collections.singletonList(file), "business");
-        String token = apiProperties.getDefaultToken();
-        String attId = uploadAttachment(file, token);
-
-        ApplicationAttachment record = new ApplicationAttachment();
-        record.setAttId(attId);
-        record.setFileName(file.getOriginalFilename());
-        record.setFileSize(file.getSize());
-        record.setBusinessType("business");
-        attachmentMapper.insert(record);
-
-        log.info("Business file uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
-        return FileUploadResult.builder()
-                .attId(attId)
-                .build();
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public UploadMaterialsResponse submitMaterials(SubmitMaterialsRequest request) {
+    public String submitMaterials(SubmitMaterialsRequest request) {
         validateRequiredParams(request.getCreditCode(), request.getCustomerNo());
-        checkCreditCodeUnique(request.getCreditCode());
 
-        // 从请求体收集文件项，标记 businessType
+        // 从请求体收集文件项，标记 businessType key（"finance"/"business"）
         List<SubmitFileMeta> allItems = new ArrayList<>();
         if (request.getFinanceFiles() != null) {
             for (SubmitMaterialsRequest.SubmitFileItem f : request.getFinanceFiles()) {
                 allItems.add(new SubmitFileMeta(f.getAttId(), "finance", f.getReportDate()));
             }
         }
-        if (request.getBusinessFiles() != null) {
-            for (SubmitMaterialsRequest.SubmitFileItem f : request.getBusinessFiles()) {
-                allItems.add(new SubmitFileMeta(f.getAttId(), "business", null));
-            }
+        if (request.getBusinessFile() != null) {
+            allItems.add(new SubmitFileMeta(request.getBusinessFile().getAttId(), "business", null));
         }
         if (allItems.isEmpty()) {
             throw new BusinessException("NO_FILES", "请至少提供一个文件");
@@ -124,13 +130,9 @@ public class SxdServiceImpl implements SxdService {
         sxdMapper.insert(record);
 
         try {
-            // 构建批量新增参数（从 application_att 查文件名和大小）
+            // 构建批量新增参数（从 application_att 查文件名/大小，docTypeId 从 financeFiles/businessFiles 分类确定）
             List<DocBatchAddItem> batchItems = buildBatchAddItems(allItems);
             ExternalResponse batchResponse = batchAddDocs(batchItems, token);
-            if (!batchResponse.isSuccess() || batchResponse.getData() == null) {
-                throw new BusinessException("BATCH_ADD_FAILED",
-                        "申请记录 " + batchTaskId + " 资料批量新增失败");
-            }
 
             DocBatchAddData batchData = batchResponse.getDataAs(DocBatchAddData.class);
             if (batchData.getInvalidDocNames() != null
@@ -139,7 +141,7 @@ public class SxdServiceImpl implements SxdService {
                         batchTaskId, batchData.getInvalidDocNames());
             }
 
-            // 通过 attId 匹配请求体中的 reportDate 和 businessType，创建 DocEntry 并插入
+            // 通过 attId 匹配请求体中的 reportDate 和 businessType（已回填为 docTypeId），创建 DocEntry 并插入
             Map<String, SubmitFileMeta> itemIndex = allItems.stream()
                     .collect(Collectors.toMap(i -> i.attId, i -> i, (a, b) -> a));
             for (DocInfo doc : batchData.getDocList()) {
@@ -152,15 +154,17 @@ public class SxdServiceImpl implements SxdService {
                 docEntryMapper.insert(entry);
             }
 
+            // 提交成功后删除 application_att 中对应的附件记录
+            for (SubmitFileMeta item : allItems) {
+                attachmentMapper.delete(
+                        new LambdaQueryWrapper<ApplicationAttachment>()
+                                .eq(ApplicationAttachment::getAttId, item.attId));
+            }
+
             log.info("Application record submitted: taskId={}, creditCode={}, docCount={}",
                     batchTaskId, record.getCreditCode(), batchData.getDocList().size());
 
-            return UploadMaterialsResponse.builder()
-                    .taskId(batchTaskId)
-                    .submittedCount(1)
-                    .message("资料提交成功")
-                    .failedIds(Collections.emptyList())
-                    .build();
+            return batchTaskId;
 
         } catch (BusinessException e) {
             log.warn("Submission failed for taskId={}: {}", batchTaskId, e.getMessage());
@@ -206,24 +210,24 @@ public class SxdServiceImpl implements SxdService {
                     requestEntity,
                     ExternalResponse.class);
             ExternalResponse respBody = response.getBody();
-            if (respBody == null || !respBody.isSuccess()) {
-                String msg = respBody != null ? respBody.getMessage() : "未知错误";
-                throw new BusinessException("ATTACH_UPLOAD_FAILED",
-                        "文件 [" + file.getOriginalFilename() + "] 上传失败：" + msg);
+            if (respBody == null) {
+                throw new BusinessException("ATTACH_UPLOAD_FAILED", "附件上传失败：未知错误");
+            }
+            if (!respBody.isSuccess()) {
+                throw new BusinessException("ATTACH_UPLOAD_FAILED", respBody.getMessage());
             }
             return (String) respBody.getData();
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.error("Attachment upload failed for file: {}", file.getOriginalFilename(), e);
-            throw new BusinessException("ATTACH_UPLOAD_FAILED",
-                    "文件 [" + file.getOriginalFilename() + "] 上传异常：" + e.getMessage());
+            throw new BusinessException("ATTACH_UPLOAD_FAILED", e.getMessage());
         }
     }
 
     /**
      * 根据请求中的文件项列表构建批量新增请求参数。
-     * fileName/fileSize 从 application_att 表查询。
+     * fileName/fileSize 从 application_att 表查询，docTypeId 根据 financeFiles/businessFiles 分类从配置获取。
      */
     private List<DocBatchAddItem> buildBatchAddItems(List<SubmitFileMeta> items) {
         List<DocBatchAddItem> result = new ArrayList<>();
@@ -231,6 +235,7 @@ public class SxdServiceImpl implements SxdService {
         Long dirId = apiProperties.getDirId();
         Long projectId = apiProperties.getProjectId();
         for (SubmitFileMeta item : items) {
+            // 根据 businessType key ("finance"/"business") 查找对应的 docTypeId
             Long docTypeId = docTypeMap.get(item.businessType);
             if (docTypeId == null) {
                 throw new BusinessException("INVALID_BUSINESS_TYPE",
@@ -244,11 +249,15 @@ public class SxdServiceImpl implements SxdService {
                 throw new BusinessException("ATTACH_NOT_FOUND",
                         "附件 " + item.attId + " 不存在，请重新上传");
             }
+            // 回填 businessType 为 docTypeId 值，便于下游 DocEntry 使用
+            item.businessType = String.valueOf(docTypeId);
+            // 附加 attId 后 6 位确保 docName 全局唯一（外部 API 要求 docName 不重复）
+            String uniqueDocName = makeUniqueDocName(att.getFileName(), item.attId);
             result.add(DocBatchAddItem.builder()
                     .attId(item.attId)
                     .dirId(dirId)
-                    .docName(att.getFileName())
-                    .docSize(att.getFileSize())
+                    .docName(uniqueDocName)
+                    .docSize(att.getFileSize() / 1024)   // byte → KB
                     .docTypeId(docTypeId)
                     .extraInfo("{}")
                     .projectId(projectId)
@@ -256,6 +265,19 @@ public class SxdServiceImpl implements SxdService {
                     .build());
         }
         return result;
+    }
+
+    /**
+     * 在文件名末尾附加 attId 后 6 位，确保 docName 全局唯一。
+     * 例如：财报.pdf → 财报_a3f2c1.pdf
+     */
+    private static String makeUniqueDocName(String fileName, String attId) {
+        String suffix = attId.substring(Math.max(0, attId.length() - 6));
+        int dot = fileName.lastIndexOf('.');
+        if (dot > 0) {
+            return fileName.substring(0, dot) + "_" + suffix + fileName.substring(dot);
+        }
+        return fileName + "_" + suffix;
     }
 
     private ExternalResponse batchAddDocs(List<DocBatchAddItem> items, String token) {
@@ -273,25 +295,42 @@ public class SxdServiceImpl implements SxdService {
                     ExternalResponse.class);
             ExternalResponse respBody = response.getBody();
             if (respBody == null) {
-                throw new BusinessException("BATCH_ADD_FAILED", "资料批量新增接口返回为空");
+                throw new BusinessException("BATCH_ADD_FAILED", "资料批量新增失败：未知错误");
+            }
+            if (!respBody.isSuccess() || respBody.getData() == null) {
+                throw new BusinessException("BATCH_ADD_FAILED", respBody.getMessage());
             }
             return respBody;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.error("Batch add documents failed", e);
-            throw new BusinessException("BATCH_ADD_FAILED", "资料批量新增异常：" + e.getMessage());
+            throw new BusinessException("BATCH_ADD_FAILED", e.getMessage());
         }
     }
 
-    private void checkCreditCodeUnique(String creditCode) {
-        Long count = sxdMapper.selectCount(
-                new LambdaQueryWrapper<ApplicationRecord>()
-                        .eq(ApplicationRecord::getCreditCode, creditCode));
-        if (count > 0) {
-            throw new BusinessException("DUPLICATE_CREDIT_CODE",
-                    "统一社会信用代码 [" + creditCode + "] 已存在，请勿重复建档");
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void confirmControllerName(ConfirmControllerRequest request) {
+        if (request == null || !StringUtils.hasText(request.getTaskId())) {
+            throw new BusinessException("PARAM_MISSING", "任务 ID 不能为空");
         }
+        if (!StringUtils.hasText(request.getActCntlrNm())) {
+            throw new BusinessException("PARAM_MISSING", "实际控制人姓名不能为空");
+        }
+
+        ApplicationRecord record = sxdMapper.selectById(request.getTaskId());
+        if (record == null) {
+            throw new BusinessException("TASK_NOT_FOUND",
+                    "任务 [" + request.getTaskId() + "] 不存在");
+        }
+
+        record.setActCntlrNm(request.getActCntlrNm());
+        record.setUpdatedAt(LocalDateTime.now());
+        sxdMapper.updateById(record);
+
+        log.info("Controller name confirmed: taskId={}, actCntlrNm={}",
+                request.getTaskId(), request.getActCntlrNm());
     }
 
     @Override
@@ -312,17 +351,172 @@ public class SxdServiceImpl implements SxdService {
         return success;
     }
 
+    @Override
+    public ExtractStatusResponse queryExtractStatus(String taskId) {
+        // 查询该任务下的所有文档
+        List<DocEntry> docEntries = docEntryMapper.selectList(
+                new LambdaQueryWrapper<DocEntry>()
+                        .eq(DocEntry::getTaskId, taskId));
+
+        if (docEntries == null || docEntries.isEmpty()) {
+            throw new BusinessException("DOC_NOT_FOUND",
+                    "任务 [" + taskId + "] 下未找到文档记录");
+        }
+
+        String token = apiProperties.getDefaultToken();
+        String detailUrlBase = apiProperties.getDocDetailUrl();
+        List<String> pendingDocNames = new ArrayList<>();
+
+        for (DocEntry entry : docEntries) {
+            DocDetailData detail = getDocDetail(detailUrlBase + "/" + entry.getDocId(), token);
+            String state = detail.getExtractState();
+            // U=待执行, I=执行中 — 视为未完成
+            if ("U".equals(state) || "I".equals(state)) {
+                pendingDocNames.add(detail.getDocName());
+            }
+        }
+
+        boolean completed = pendingDocNames.isEmpty();
+        return new ExtractStatusResponse(completed, pendingDocNames);
+    }
+
+    @Override
+    public ExtractDataResponse queryExtractData(String taskId) {
+        // 查商业计划书类型（businessType = docType.business 的值）的文档
+        String businessDocType = String.valueOf(apiProperties.getDocType().get("business"));
+        List<DocEntry> docEntries = docEntryMapper.selectList(
+                new LambdaQueryWrapper<DocEntry>()
+                        .eq(DocEntry::getTaskId, taskId)
+                        .eq(DocEntry::getBusinessType, businessDocType));
+
+        if (docEntries == null || docEntries.isEmpty()) {
+            throw new BusinessException("DOC_NOT_FOUND",
+                    "任务 [" + taskId + "] 下未找到商业计划书文档");
+        }
+
+        String token = apiProperties.getDefaultToken();
+        // 收集每个 tableName 对应的文本列表（可能有多个 doc，多个记录）
+        Map<String, List<String>> tableTexts = new LinkedHashMap<>();
+
+        for (DocEntry entry : docEntries) {
+            Long docId;
+            try {
+                docId = Long.parseLong(entry.getDocId());
+            } catch (NumberFormatException e) {
+                log.warn("Invalid docId format: {}", entry.getDocId());
+                throw new BusinessException("DOC_DATA_FAILED",
+                        "文档 ID 格式无效：" + entry.getDocId());
+            }
+
+            for (String tableName : BUSINESS_PLAN_TABLES) {
+                List<String> texts = queryExtractDataByTable(docId, tableName, token);
+                tableTexts.computeIfAbsent(tableName, k -> new ArrayList<>()).addAll(texts);
+            }
+        }
+
+        // 按 BUSINESS_PLAN_TABLES 顺序构建响应
+        List<ExtractDataResponse.ExtractDataItem> extractData = new ArrayList<>();
+        for (String tableName : BUSINESS_PLAN_TABLES) {
+            List<String> texts = tableTexts.getOrDefault(tableName, Collections.emptyList());
+            String mergedText = String.join("\n", texts);
+            extractData.add(new ExtractDataResponse.ExtractDataItem(tableName, mergedText));
+        }
+
+        return new ExtractDataResponse(extractData);
+    }
+
+    /**
+     * 调用外部提取数据查询 API，返回该 tableName 下的文本列表。
+     */
+    private List<String> queryExtractDataByTable(Long docId, String tableName, String token) {
+        ExtractQueryDataRequest request = new ExtractQueryDataRequest(docId, tableName);
+
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            if (StringUtils.hasText(token)) {
+                headers.set("c1-token", token);
+            }
+
+            HttpEntity<ExtractQueryDataRequest> requestEntity = new HttpEntity<>(request, headers);
+            ResponseEntity<ExternalResponse> response = restTemplate.exchange(
+                    apiProperties.getDocQueryDataUrl(),
+                    HttpMethod.POST,
+                    requestEntity,
+                    ExternalResponse.class);
+
+            ExternalResponse respBody = response.getBody();
+            if (respBody == null) {
+                throw new BusinessException("DOC_QUERY_FAILED",
+                        "提取数据查询失败：未知错误");
+            }
+            if (!respBody.isSuccess() || respBody.getData() == null) {
+                throw new BusinessException("DOC_QUERY_FAILED",
+                        "提取数据查询失败：" + respBody.getMessage());
+            }
+
+            List<ExtractQueryDataRecord> records = respBody.getDataAsList(ExtractQueryDataRecord.class);
+            if (records == null || records.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Function<ExtractQueryDataRecord, String> extractor = TEXT_EXTRACTORS.get(tableName);
+            if (extractor == null) {
+                log.warn("No text extractor for tableName: {}", tableName);
+                return Collections.emptyList();
+            }
+
+            return records.stream()
+                    .map(extractor)
+                    .filter(Objects::nonNull)
+                    .filter(s -> !s.trim().isEmpty())
+                    .collect(Collectors.toList());
+
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to query extract data for docId={}, tableName={}", docId, tableName, e);
+            throw new BusinessException("DOC_QUERY_FAILED",
+                    "提取数据查询异常：" + e.getMessage());
+        }
+    }
+
+    private DocDetailData getDocDetail(String url, String token) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            if (StringUtils.hasText(token)) {
+                headers.set("c1-token", token);
+            }
+            HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+            ResponseEntity<ExternalResponse> response = restTemplate.exchange(
+                    url, HttpMethod.GET, requestEntity, ExternalResponse.class);
+            ExternalResponse respBody = response.getBody();
+            if (respBody == null) {
+                throw new BusinessException("DOC_DETAIL_FAILED", "资料详情查询失败：未知错误");
+            }
+            if (!respBody.isSuccess() || respBody.getData() == null) {
+                throw new BusinessException("DOC_DETAIL_FAILED", respBody.getMessage());
+            }
+            return respBody.getDataAs(DocDetailData.class);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("Failed to query doc detail for url: {}", url, e);
+            throw new BusinessException("DOC_DETAIL_FAILED", "资料详情查询异常：" + e.getMessage());
+        }
+    }
+
     private String generateTaskId() {
         UUID uuid = UUID.randomUUID();
         return "TASK-" + String.format("%016x%016x",
                 uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 
-    /** 提交时从请求体解析的文件项（attId + businessType + reportDate） */
+    /** 提交时从请求体解析的文件项（attId + businessType key + reportDate），businessType 在 buildBatchAddItems 中回填为 docTypeId */
     @lombok.AllArgsConstructor
     private static class SubmitFileMeta {
         final String attId;
-        final String businessType;
+        String businessType;          // 初始为 "finance"/"business"，build 时回填为 docTypeId 值
         final String reportDate;
     }
 }

@@ -24,7 +24,7 @@ public class DocEntry {
     @TableField("task_id")
     private String taskId;
 
-    /** 业务类型（finance / business），从请求体回填 */
+    /** 业务类型（存储 docTypeId 值，如 "1273757631042949120"） */
     @TableField("business_type")
     private String businessType;
 

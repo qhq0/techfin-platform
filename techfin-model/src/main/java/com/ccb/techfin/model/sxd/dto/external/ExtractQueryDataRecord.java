@@ -1,0 +1,37 @@
+package com.ccb.techfin.model.sxd.dto.external;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.Data;
+
+/**
+ * 提取数据查询外部 API 的 data 数组中单条记录。
+ * 不同 tableName 返回不同的文本字段，此处汇总所有可能字段。
+ */
+@Data
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class ExtractQueryDataRecord {
+
+    /** dib_manage_company_profile */
+    private String companyProfileText;
+
+    /** dib_director_keyresume */
+    private String resume;
+
+    /** dib_manage_business_and_products */
+    private String businessAndProductsText;
+
+    /** dib_manage_business_circumstance / dib_company_qualification / dib_manage_y_industry_analysis */
+    private String text;
+
+    /** dib_manage_progressiveness_description */
+    private String progressivenessText;
+
+    /** dib_manage_competitive_advantages */
+    private String competitivenessText;
+
+    /** dib_manage_development_strategy */
+    private String strategyText;
+}

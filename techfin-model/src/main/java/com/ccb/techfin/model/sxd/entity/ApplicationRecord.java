@@ -25,6 +25,10 @@ public class ApplicationRecord {
     @TableField("status")
     private TaskStatus status;
 
+    /** 实际控制人姓名，用户确认后回填 */
+    @TableField("act_cntlr_nm")
+    private String actCntlrNm;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 
