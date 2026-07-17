@@ -1184,35 +1184,16 @@ public class SxdServiceImpl implements SxdService {
     // ========== 利润表辅助方法 ==========
 
     /**
-     * 从利润表记录中模糊匹配指定科目的 current_amount。
-     * <p>
-     * 匹配优先级：① item_standard 精确匹配 → ② item 精确匹配 → ③ item 包含匹配。
-     * 对于"营业收入"，额外尝试匹配"营业总收入"（利润表标准科目名）。
+     * 从利润表记录中按 item_standard 精确匹配指定科目的 current_amount。
+     * 如"营业收入"匹配 item_standard="营业总收入"。
      */
     private BigDecimal findProfitItemValue(List<BalanceSheetRecord> records, String displayName) {
         List<String> keys = PROFIT_ITEM_SEARCH_KEYS.get(displayName);
         if (keys == null || records == null) return null;
 
-        // Pass 1: item_standard 精确匹配
         for (BalanceSheetRecord r : records) {
             if (r.getItemStandard() != null && keys.contains(r.getItemStandard())) {
                 return r.getCurrentAmount();
-            }
-        }
-        // Pass 2: item 精确匹配
-        for (BalanceSheetRecord r : records) {
-            if (r.getItem() != null && keys.contains(r.getItem())) {
-                return r.getCurrentAmount();
-            }
-        }
-        // Pass 3: item 包含匹配（如 "一、营业总收入" 模糊匹配 "营业总收入"）
-        for (BalanceSheetRecord r : records) {
-            if (r.getItem() != null) {
-                for (String key : keys) {
-                    if (r.getItem().contains(key)) {
-                        return r.getCurrentAmount();
-                    }
-                }
             }
         }
         return null;
