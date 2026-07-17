@@ -1,0 +1,28 @@
+package com.ccb.techfin.model.sxd.dto.external;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import lombok.Data;
+
+/**
+ * 审计报告附注查询（queryData — dib_intervening_y_auditreport_jh）的 data 数组中单条记录。
+ * 用于获取"财务报表口径"等附注信息项。
+ */
+@Data
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class AuditReportItem {
+
+    /** 项目名称，如 财务报表口径、财务报表截止日期 */
+    private String item;
+
+    /** 项目值，如 财务报表口径 → "1"(单一) / "2"(合并) */
+    private String itemValue;
+
+    /** 报表日期 */
+    private String reportDate;
+
+    /** 文档 ID */
+    private String docId;
+}

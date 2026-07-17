@@ -8,7 +8,9 @@ import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
 import com.ccb.techfin.service.sxd.CustomerService;
 import com.ccb.techfin.service.sxd.SxdService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -63,6 +65,7 @@ public class SxdController {
         return CommonResp.success(name);
     }
 
+
     /**
      * 确认/修改实际控制人姓名，回填到 application_record 表。
      */
@@ -92,5 +95,46 @@ public class SxdController {
     public CommonResp<ExtractDataResponse> queryExtractData(@PathVariable("task_id") String taskId) {
         ExtractDataResponse result = sxdService.queryExtractData(taskId);
         return CommonResp.success(result);
+    }
+
+    /**
+     * 导出商业计划书的提取结果 xlsx 文件。
+     * 根据 taskId 查询 application_doc 中商业计划书类型的文档，调用外部导出资料接口直接返回文件流。
+     */
+    @GetMapping("/export-data/business/{task_id}")
+    public ResponseEntity<byte[]> exportBusinessData(@PathVariable("task_id") String taskId) {
+        byte[] data = sxdService.exportBusinessExtractData(taskId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"商业计划书提取数据.xlsx\"")
+                .body(data);
+    }
+
+    /**
+     * 导出财务报表的提取结果 zip 压缩包。
+     * 根据 taskId 查询 application_doc 中财务报表类型的文档列表，逐个调用外部导出资料接口，
+     * 将所有 xlsx 打包为 zip 返回。
+     */
+    @GetMapping("/export-data/finance/{task_id}")
+    public ResponseEntity<byte[]> exportFinanceData(@PathVariable("task_id") String taskId) {
+        byte[] data = sxdService.exportFinanceExtractData(taskId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"财务报表提取数据.zip\"")
+                .body(data);
+    }
+
+    /**
+     * 生成报告，包含资产负债表关键科目表（markdown 格式）。
+     * 根据 taskId 获取财务报表文档，通过外部表格提取状态接口确定使用的资产负债表类型，
+     * 查询提取数据后按科目和日期聚合，生成 markdown 表格返回。
+     */
+    @GetMapping("/report/{task_id}")
+    public CommonResp<String> generateReport(@PathVariable("task_id") String taskId) {
+        String markdown = sxdService.generateReport(taskId);
+        return CommonResp.success(markdown);
     }
 }

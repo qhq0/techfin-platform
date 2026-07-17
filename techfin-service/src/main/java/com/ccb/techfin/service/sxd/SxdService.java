@@ -48,4 +48,34 @@ public interface SxdService {
      * @return 提取数据列表（tableName → text）
      */
     ExtractDataResponse queryExtractData(String taskId);
+
+    /**
+     * 导出商业计划书的提取结果 xlsx 文件。
+     * 查询 application_doc 中商业计划书类型的文档，调用外部导出资料接口获取 xlsx 字节流。
+     * 商业计划书仅单个文件，直接返回文件内容。
+     *
+     * @param taskId 申请记录的任务 ID
+     * @return xlsx 文件字节数组
+     */
+    byte[] exportBusinessExtractData(String taskId);
+
+    /**
+     * 导出财务报表的提取结果 zip 压缩包。
+     * 查询 application_doc 中财务报表类型的文档列表，逐个调用外部导出资料接口获取 xlsx，
+     * 将所有 xlsx 打包为 zip 压缩包返回。
+     *
+     * @param taskId 申请记录的任务 ID
+     * @return zip 压缩包字节数组
+     */
+    byte[] exportFinanceExtractData(String taskId);
+
+    /**
+     * 生成报告，包含资产负债表关键科目表（markdown 格式）。
+     * 根据 taskId 获取财务报表文档，通过外部表格提取状态接口确定使用的资产负债表类型，
+     * 查询提取数据后按科目和日期聚合，生成 markdown 表格。
+     *
+     * @param taskId 申请记录的任务 ID
+     * @return markdown 格式的报告文本
+     */
+    String generateReport(String taskId);
 }

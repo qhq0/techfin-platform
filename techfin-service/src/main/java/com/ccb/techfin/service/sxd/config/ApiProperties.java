@@ -15,6 +15,8 @@ public class ApiProperties {
     private String docBatchAddUrl;
     private String docDetailUrl;
     private String docQueryDataUrl;
+    private String docExportDataUrl;
+    private String docTableExtractStateUrl;
     private Long projectId;
     private Long dirId = 0L;
     private Map<String, Long> docType;
