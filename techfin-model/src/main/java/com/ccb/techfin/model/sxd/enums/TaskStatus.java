@@ -3,11 +3,8 @@ package com.ccb.techfin.model.sxd.enums;
 import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum TaskStatus implements IEnum<String> {
-    DRAFT("Draft - Attachments Uploaded"),
-    PENDING_ANALYSIS("Pending Analysis"),
-    ANALYSIS_IN_PROGRESS("Analysis In Progress"),
-    COMPLETED("Completed"),
-    REJECTED("Rejected");
+    UNFINISHED("未完成"),
+    COMPLETED("已完成");
 
     private final String description;
 

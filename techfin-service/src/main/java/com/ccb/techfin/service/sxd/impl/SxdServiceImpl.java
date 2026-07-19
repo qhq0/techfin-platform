@@ -187,6 +187,7 @@ public class SxdServiceImpl implements SxdService {
         record.setAttId(attId);
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
+        record.setCreatedAt(LocalDateTime.now());
         attachmentMapper.insert(record);
 
         log.info("File uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
@@ -221,7 +222,7 @@ public class SxdServiceImpl implements SxdService {
         record.setTaskId(batchTaskId);
         record.setCreditCode(request.getCreditCode());
         record.setCustomerNo(request.getCustomerNo());
-        record.setStatus(TaskStatus.PENDING_ANALYSIS);
+        record.setStatus(TaskStatus.UNFINISHED);
         record.setCreatedAt(now);
         record.setUpdatedAt(now);
         sxdMapper.insert(record);
@@ -851,6 +852,13 @@ public class SxdServiceImpl implements SxdService {
                 }
             }
         }
+
+        // ============ 更新任务状态 + 清理文档记录 ============
+        docEntryMapper.delete(new LambdaQueryWrapper<DocEntry>()
+                .eq(DocEntry::getTaskId, taskId));
+        record.setStatus(TaskStatus.COMPLETED);
+        record.setUpdatedAt(LocalDateTime.now());
+        sxdMapper.updateById(record);
 
         // ============ 生成 Word 文档 ============
         return createWordDocument(customerProfile, bsItemDateValues, bsDateColumns,

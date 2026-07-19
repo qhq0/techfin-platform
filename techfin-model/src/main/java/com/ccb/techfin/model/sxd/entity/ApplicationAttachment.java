@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
+
 /**
  * 附件上传记录，独立实体映射 application_att 表。
  * 上传时记录文件元信息，提交时根据 attId 查找匹配。
@@ -32,4 +34,8 @@ public class ApplicationAttachment {
     /** 文件大小（字节） */
     @TableField("file_size")
     private Long fileSize;
+
+    /** 创建时间，用于定时清理未关联的孤立附件 */
+    @TableField("created_at")
+    private LocalDateTime createdAt;
 }

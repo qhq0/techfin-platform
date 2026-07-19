@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS application_att (
     att_id        VARCHAR(64)  NOT NULL                COMMENT '附件上传返回的附件 ID',
     file_name     VARCHAR(255) DEFAULT NULL             COMMENT '上传时的原始文件名',
     file_size     BIGINT       DEFAULT NULL             COMMENT '文件大小（字节）',
+    created_at    DATETIME     DEFAULT NULL             COMMENT '创建时间，用于清理孤立附件',
     PRIMARY KEY (id),
     UNIQUE KEY uk_att_id (att_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='附件元信息表';
@@ -32,7 +33,7 @@ CREATE TABLE IF NOT EXISTS application_record (
     task_id     VARCHAR(64)  NOT NULL                COMMENT '任务 ID，格式 TASK-<32位hex>',
     credit_code VARCHAR(18)  NOT NULL                COMMENT '统一社会信用代码',
     customer_no VARCHAR(64)  NOT NULL                COMMENT '客户编号',
-    status      VARCHAR(32)  NOT NULL DEFAULT 'DRAFT' COMMENT '任务状态（PENDING_ANALYSIS / COMPLETED / REJECTED）',
+    status      VARCHAR(32)  NOT NULL DEFAULT 'UNFINISHED' COMMENT '任务状态：UNFINISHED（未完成）/ COMPLETED（已完成）',
     act_cntlr_nm VARCHAR(200) DEFAULT NULL             COMMENT '实际控制人姓名，用户确认后回填',
     created_at  DATETIME     NOT NULL                COMMENT '创建时间',
     updated_at  DATETIME     NOT NULL                COMMENT '更新时间',
