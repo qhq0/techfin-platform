@@ -128,13 +128,17 @@ public class SxdController {
     }
 
     /**
-     * 生成报告，包含资产负债表关键科目表（markdown 格式）。
-     * 根据 taskId 获取财务报表文档，通过外部表格提取状态接口确定使用的资产负债表类型，
-     * 查询提取数据后按科目和日期聚合，生成 markdown 表格返回。
+     * 生成 Word 报告，包含企业基本信息、资产负债表关键科目和利润表关键科目。
+     * 根据 taskId 获取申请记录的企业信息和财务报表数据，从模板生成 Word 文档。
      */
     @GetMapping("/report/{task_id}")
-    public CommonResp<String> generateReport(@PathVariable("task_id") String taskId) {
-        String markdown = sxdService.generateReport(taskId);
-        return CommonResp.success(markdown);
+    public ResponseEntity<byte[]> generateReport(@PathVariable("task_id") String taskId) {
+        byte[] data = sxdService.generateReport(taskId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"企业信息报告.docx\"")
+                .body(data);
     }
 }

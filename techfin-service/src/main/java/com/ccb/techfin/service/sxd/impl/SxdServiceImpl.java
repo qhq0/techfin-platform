@@ -22,13 +22,19 @@ import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
 import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
 import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
 import com.ccb.techfin.model.sxd.entity.DocEntry;
+import com.ccb.techfin.model.sxd.entity.CustomerProfile;
 import com.ccb.techfin.model.sxd.enums.TaskStatus;
 import com.ccb.techfin.service.sxd.SxdService;
+import com.ccb.techfin.service.sxd.CustomerService;
 import com.ccb.techfin.service.sxd.config.ApiProperties;
 import com.ccb.techfin.service.sxd.validator.FileValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.xwpf.usermodel.*;
+import org.apache.xmlbeans.XmlCursor;
 import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,11 +46,13 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -61,6 +69,8 @@ public class SxdServiceImpl implements SxdService {
     private final FileValidator fileValidator;
     private final ApiProperties apiProperties;
     private final RestTemplate restTemplate;
+    private final CustomerService customerService;
+    private final ResourceLoader resourceLoader;
 
     /** 商业计划书提取数据查询的 tableName 列表（按展示顺序） */
     private static final List<String> BUSINESS_PLAN_TABLES = Collections.unmodifiableList(
@@ -102,6 +112,44 @@ public class SxdServiceImpl implements SxdService {
             "营业利润", Arrays.asList("营业利润"),
             "利润总额", Arrays.asList("利润总额"),
             "净利润", Arrays.asList("净利润")
+    );
+
+    /** 占位符名称 -> CustomerProfile 字段值提取函数 */
+    private static final Map<String, Function<CustomerProfile, String>> PROFILE_FIELD_GETTERS = Map.ofEntries(
+            Map.entry("cst_nm", CustomerProfile::getCstNm),
+            Map.entry("credit_code", CustomerProfile::getCreditCode),
+            Map.entry("fd_dt", CustomerProfile::getFdDt),
+            Map.entry("lgl_rprs_nm", CustomerProfile::getLglRprsNm),
+            Map.entry("act_cntlr_nm", CustomerProfile::getActCntlrNm),
+            Map.entry("rgst_cpamt", CustomerProfile::getRgstCpamt),
+            Map.entry("arcptl_cpamt", CustomerProfile::getArcptlCpamt),
+            Map.entry("cpct_tpcd", CustomerProfile::getCpctTpcd),
+            Map.entry("entp_sz_cd", CustomerProfile::getEntpSzCd),
+            Map.entry("entp_bliy", CustomerProfile::getEntpBliy),
+            Map.entry("dtl_adr", CustomerProfile::getDtlAdr),
+            Map.entry("org_oprt_scop_dsc", CustomerProfile::getOrgOprtScopDsc),
+            Map.entry("tech_tag", CustomerProfile::getTechTag),
+            Map.entry("tech_flow", CustomerProfile::getTechFlow),
+            Map.entry("kc_score", CustomerProfile::getKcScore),
+            Map.entry("entp_ptnt_num", CustomerProfile::getEntpPtntNum),
+            Map.entry("entp_prct_new_tp_ptnt_num", CustomerProfile::getEntpPrctNewTpPtntNum),
+            Map.entry("entp_ivt_ptnt_num", CustomerProfile::getEntpIvtPtntNum),
+            Map.entry("clst_5yr_inn_rs_wcopr_num", CustomerProfile::getClst5YrInnRsWcoprNum),
+            Map.entry("if_loan", CustomerProfile::getIfLoan),
+            Map.entry("product_name", CustomerProfile::getProductName),
+            Map.entry("loan_amount", CustomerProfile::getLoanAmount),
+            Map.entry("loan_term", CustomerProfile::getLoanTerm),
+            Map.entry("loan_balance", CustomerProfile::getLoanBalance),
+            Map.entry("dep_bal", CustomerProfile::getDepBal),
+            Map.entry("dep_bal_dt", CustomerProfile::getDepBalDt),
+            Map.entry("dep_aadbal", CustomerProfile::getDepAadbal),
+            Map.entry("acc_start_dt", CustomerProfile::getAccStartDt),
+            Map.entry("acc_type", CustomerProfile::getAccType),
+            Map.entry("isug_pnum", CustomerProfile::getIsugPnum),
+            Map.entry("avg_12_isug_amt", CustomerProfile::getAvg12IsugAmt),
+            Map.entry("if_yuqi", CustomerProfile::getIfYuqi),
+            Map.entry("ltgtrltd_ind", CustomerProfile::getLtgtrltdInd),
+            Map.entry("if_rad_alarm", CustomerProfile::getIfRadAlarm)
     );
 
     private static final String ITEM_ASSET_TOTAL = "资产总计";
@@ -666,7 +714,23 @@ public class SxdServiceImpl implements SxdService {
     // ========== 报告生成功能 ==========
 
     @Override
-    public String generateReport(String taskId) {
+    public byte[] generateReport(String taskId) {
+        // ============ 查询申请记录和企业信息 ============
+        ApplicationRecord record = sxdMapper.selectById(taskId);
+        if (record == null) {
+            throw new BusinessException("TASK_NOT_FOUND",
+                    "任务 [" + taskId + "] 不存在");
+        }
+        String customerNo = record.getCustomerNo();
+        CustomerProfile customerProfile = null;
+        if (customerNo != null && !customerNo.isEmpty()) {
+            try {
+                customerProfile = customerService.getCustomerProfile(customerNo);
+            } catch (BusinessException e) {
+                log.warn("Customer profile not found for customerNo={}: {}", customerNo, e.getMessage());
+            }
+        }
+
         String financeDocType = String.valueOf(apiProperties.getDocType().get("finance"));
         List<DocEntry> entries = docEntryMapper.selectList(
                 new LambdaQueryWrapper<DocEntry>()
@@ -693,18 +757,20 @@ public class SxdServiceImpl implements SxdService {
                 continue;
             }
 
-            // ① 确定使用哪个资产负债表（合并/母公司）
-            String tableName = determineBalanceSheetTable(docId, token);
-
-            // ② 查询资产负债表提取数据
-            List<BalanceSheetRecord> records = queryBalanceSheetData(docId, tableName, token);
+            String tableName;
+            List<BalanceSheetRecord> records;
+            try {
+                tableName = determineBalanceSheetTable(docId, token);
+                records = queryBalanceSheetData(docId, tableName, token);
+            } catch (BusinessException e) {
+                log.warn("Query failed for docId={} balance sheet: {}, outputting empty column", docId, e.getMessage());
+                records = null;
+            }
             if (records == null || records.isEmpty()) {
-                log.warn("No balance sheet data for docId={}, tableName={}", docId, tableName);
-                continue;
+                log.warn("No balance sheet data for docId={}, outputting empty column", docId);
             }
 
-            // ③ 获取报表日期（优先从数据中取，其次用 application_doc.report_date）
-            String reportDate = extractReportDateFromRecords(records);
+            String reportDate = (records != null && !records.isEmpty()) ? extractReportDateFromRecords(records) : null;
             if (reportDate == null || reportDate.isEmpty()) {
                 reportDate = entry.getReportDate();
             }
@@ -718,13 +784,14 @@ public class SxdServiceImpl implements SxdService {
                 bsDateColumns.add(dateCol);
             }
 
-            // ④ 提取关键科目的 current_amount
-            for (BalanceSheetRecord record : records) {
-                String itemName = record.getItem();
-                if (itemName != null && BALANCE_SHEET_KEY_ITEMS.contains(itemName)
-                        && record.getCurrentAmount() != null) {
-                    bsItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
-                            .put(dateCol, record.getCurrentAmount());
+            if (records != null) {
+                for (BalanceSheetRecord r : records) {
+                    String itemName = r.getItem();
+                    if (itemName != null && BALANCE_SHEET_KEY_ITEMS.contains(itemName)
+                            && r.getCurrentAmount() != null) {
+                        bsItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
+                                .put(dateCol, r.getCurrentAmount());
+                    }
                 }
             }
         }
@@ -733,8 +800,6 @@ public class SxdServiceImpl implements SxdService {
             throw new BusinessException("NO_BALANCE_SHEET_DATA",
                     "任务 [" + taskId + "] 下未找到有效的资产负债表数据");
         }
-
-        String bsMarkdown = buildBalanceSheetMarkdown(bsItemDateValues, bsDateColumns);
 
         // ============ 利润表处理 ============
         Map<String, Map<String, BigDecimal>> psItemDateValues = new LinkedHashMap<>();
@@ -749,18 +814,20 @@ public class SxdServiceImpl implements SxdService {
                 continue;
             }
 
-            // ① 确定使用哪个利润表（合并/母公司）
-            String tableName = determineProfitSheetTable(docId, token);
-
-            // ② 查询利润表提取数据（复用 BalanceSheetRecord，API 响应结构相同）
-            List<BalanceSheetRecord> records = queryBalanceSheetData(docId, tableName, token);
+            String tableName;
+            List<BalanceSheetRecord> records;
+            try {
+                tableName = determineProfitSheetTable(docId, token);
+                records = queryBalanceSheetData(docId, tableName, token);
+            } catch (BusinessException e) {
+                log.warn("Query failed for docId={} profit sheet: {}, outputting empty column", docId, e.getMessage());
+                records = null;
+            }
             if (records == null || records.isEmpty()) {
-                log.warn("No profit sheet data for docId={}, tableName={}", docId, tableName);
-                continue;
+                log.warn("No profit sheet data for docId={}, outputting empty column", docId);
             }
 
-            // ③ 获取报表日期
-            String reportDate = extractReportDateFromRecords(records);
+            String reportDate = (records != null && !records.isEmpty()) ? extractReportDateFromRecords(records) : null;
             if (reportDate == null || reportDate.isEmpty()) {
                 reportDate = entry.getReportDate();
             }
@@ -774,115 +841,20 @@ public class SxdServiceImpl implements SxdService {
                 psDateColumns.add(dateCol);
             }
 
-            // ④ 按科目名称模糊匹配关键科目
-            for (String itemName : PROFIT_SHEET_KEY_ITEMS) {
-                BigDecimal value = findProfitItemValue(records, itemName);
-                if (value != null) {
-                    psItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
-                            .put(dateCol, value);
+            if (records != null) {
+                for (String itemName : PROFIT_SHEET_KEY_ITEMS) {
+                    BigDecimal value = findProfitItemValue(records, itemName);
+                    if (value != null) {
+                        psItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
+                                .put(dateCol, value);
+                    }
                 }
             }
         }
 
-        StringBuilder result = new StringBuilder(bsMarkdown);
-        if (!psDateColumns.isEmpty()) {
-            result.append("\n");
-            result.append(buildProfitSheetMarkdown(psItemDateValues, psDateColumns));
-        } else {
-            log.warn("No profit sheet data found for taskId={}, skipping profit table", taskId);
-        }
-
-        return result.toString();
-    }
-
-    /**
-     * 构建资产负债表关键科目的 markdown 表格。
-     * <p>
-     * 增长率使用年末（12-31）报表列计算：取倒数第二个 12.31 列与最后一个 12.31 列计算同比，
-     * 增长率列标题以最后一个 12.31 列的年份命名（如"2024年增长率"）。
-     */
-    private String buildBalanceSheetMarkdown(
-            Map<String, Map<String, BigDecimal>> itemDateValues, List<String> dateColumns) {
-
-        // 筛选出年末（12-31）列，格式为 "YYYY年"（不带月份）
-        List<String> yearEndCols = dateColumns.stream()
-                .filter(col -> col.matches("\\d{4}年"))
-                .collect(Collectors.toList());
-
-        // 增长率计算：取最后两个年末列
-        String growthRateHeader = null;
-        String growthCurCol = null;
-        String growthPrevCol = null;
-        if (yearEndCols.size() >= 2) {
-            growthCurCol = yearEndCols.get(yearEndCols.size() - 1);
-            growthPrevCol = yearEndCols.get(yearEndCols.size() - 2);
-            String year = extractYearFromColumn(growthCurCol);
-            growthRateHeader = year + "年增长率";
-        }
-
-        boolean hasGrowthRate = growthRateHeader != null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("## 资产负债表关键科目\n\n");
-
-        // 表头
-        sb.append("| 项目 |");
-        for (String col : dateColumns) {
-            sb.append(" ").append(col).append(" |");
-        }
-        if (hasGrowthRate) {
-            sb.append(" ").append(growthRateHeader).append(" |");
-        }
-        sb.append("\n");
-
-        // 分隔行
-        int headerCount = dateColumns.size() + (hasGrowthRate ? 1 : 0);
-        sb.append("|");
-        for (int i = 0; i <= headerCount; i++) {
-            sb.append(" --- |");
-        }
-        sb.append("\n");
-
-        // 数据行
-        for (String item : BALANCE_SHEET_KEY_ITEMS) {
-            sb.append("| ").append(item).append(" |");
-            Map<String, BigDecimal> values = itemDateValues.get(item);
-            for (String col : dateColumns) {
-                BigDecimal val = values != null ? values.get(col) : null;
-                sb.append(" ").append(formatAmount(val)).append(" |");
-            }
-            // 增长率（年末列同比）
-            if (hasGrowthRate) {
-                BigDecimal curVal = values != null ? values.get(growthCurCol) : null;
-                BigDecimal prevVal = values != null ? values.get(growthPrevCol) : null;
-                sb.append(" ").append(formatGrowthRate(curVal, prevVal)).append(" |");
-            }
-            sb.append("\n");
-        }
-
-        // 资产负债率行（计算值）
-        sb.append("| 资产负债率 |");
-        for (String col : dateColumns) {
-            Map<String, BigDecimal> assetValues = itemDateValues.get(ITEM_ASSET_TOTAL);
-            Map<String, BigDecimal> liabilityValues = itemDateValues.get(ITEM_LIABILITY_TOTAL);
-            BigDecimal assetTotal = assetValues != null ? assetValues.get(col) : null;
-            BigDecimal liabilityTotal = liabilityValues != null ? liabilityValues.get(col) : null;
-            sb.append(" ").append(formatLiabilityRatio(assetTotal, liabilityTotal)).append(" |");
-        }
-        if (hasGrowthRate) {
-            Map<String, BigDecimal> assetValues = itemDateValues.get(ITEM_ASSET_TOTAL);
-            Map<String, BigDecimal> liabilityValues = itemDateValues.get(ITEM_LIABILITY_TOTAL);
-            BigDecimal curAsset = assetValues != null ? assetValues.get(growthCurCol) : null;
-            BigDecimal curLiability = liabilityValues != null ? liabilityValues.get(growthCurCol) : null;
-            BigDecimal prevAsset = assetValues != null ? assetValues.get(growthPrevCol) : null;
-            BigDecimal prevLiability = liabilityValues != null ? liabilityValues.get(growthPrevCol) : null;
-            BigDecimal curRatio = calcLiabilityRatio(curAsset, curLiability);
-            BigDecimal prevRatio = calcLiabilityRatio(prevAsset, prevLiability);
-            sb.append(" ").append(formatGrowthRate(curRatio, prevRatio)).append(" |");
-        }
-        sb.append("\n");
-
-        return sb.toString();
+        // ============ 生成 Word 文档 ============
+        return createWordDocument(customerProfile, bsItemDateValues, bsDateColumns,
+                psItemDateValues, psDateColumns);
     }
 
     /**
@@ -1216,149 +1188,353 @@ public class SxdServiceImpl implements SxdService {
      * <p>
      * 包含 9 个基本科目（营业收入 ~ 净利润）+ 3 个计算比例行（毛利润率、净利润率、研发费用占比）。
      * 增长率规则同资产负债表关键科目：取最后两个年末（12-31）列计算同比。
-     */
-    private String buildProfitSheetMarkdown(
-            Map<String, Map<String, BigDecimal>> itemDateValues, List<String> dateColumns) {
+/** 提交时从请求体解析的文件项（attId + businessType key + reportDate），businessType 在 buildBatchAddItems 中回填为 docTypeId */
 
-        // 筛选年末列
+
+    // ========== Word 文档生成（模板模式） ==========
+
+    /**
+     * 打开模板文档，替换 {{占位符}} 为实际数据，返回 Word 文档字节。
+     * <p>
+     * 模板中 {{{{field_name}}}} 占位符会被替换为客户信息字段值，
+     * {{{{资产负债表关键科目}}}} 和 {{{{利润表关键科目}}}} 会被替换为对应的数据表格。
+     */
+    private byte[] createWordDocument(CustomerProfile profile,
+                                       Map<String, Map<String, BigDecimal>> bsItemDateValues, List<String> bsDateColumns,
+                                       Map<String, Map<String, BigDecimal>> psItemDateValues, List<String> psDateColumns) {
+        String templatePath = apiProperties.getReportTemplatePath();
+        Resource templateResource = resourceLoader.getResource(templatePath);
+        if (!templateResource.exists()) {
+            throw new BusinessException("TEMPLATE_NOT_FOUND",
+                    "报告模板文件不存在: " + templatePath);
+        }
+
+        try (InputStream is = templateResource.getInputStream();
+             XWPFDocument doc = new XWPFDocument(is);
+             ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+
+            // 1. 替换客户基本信息占位符 {{cst_nm}}、{{credit_code}} 等
+            replaceProfilePlaceholders(doc, profile);
+
+            // 2. 替换资产负债表关键科目占位符 -> 插入表格
+            if (!bsDateColumns.isEmpty()) {
+                replacePlaceholderWithTable(doc, "{{资产负债表关键科目}}",
+                        table -> fillBalanceSheetTable(table, bsItemDateValues, bsDateColumns));
+            }
+
+            // 3. 替换利润表关键科目占位符 -> 插入表格
+            if (!psDateColumns.isEmpty()) {
+                replacePlaceholderWithTable(doc, "{{利润表关键科目}}",
+                        table -> fillProfitSheetTable(table, psItemDateValues, psDateColumns));
+            }
+
+            doc.write(baos);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            log.error("Failed to create Word document from template", e);
+            throw new BusinessException("DOC_CREATE_FAILED", "Word 文档生成失败：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 替换文档段落中 {{{{field_name}}}} 格式的占位符为实际客户信息字段值。
+     */
+    private void replaceProfilePlaceholders(XWPFDocument doc, CustomerProfile profile) {
+        for (XWPFParagraph para : doc.getParagraphs()) {
+            for (XWPFRun run : para.getRuns()) {
+                String text = run.getText(0);
+                if (text == null || !text.contains("{{")) continue;
+
+                String replaced = text;
+                boolean changed = false;
+                for (Map.Entry<String, Function<CustomerProfile, String>> entry : PROFILE_FIELD_GETTERS.entrySet()) {
+                    String placeholder = "{{" + entry.getKey() + "}}";
+                    if (replaced.contains(placeholder)) {
+                        String value = profile != null ? entry.getValue().apply(profile) : "-";
+                        replaced = replaced.replace(placeholder, value != null ? value : "-");
+                        changed = true;
+                    }
+                }
+                if (changed) {
+                    run.setText(replaced, 0);
+                }
+            }
+        }
+    }
+
+    /**
+     * 在文档中查找包含指定占位符文本的段落，在其位置插入一个新表格，
+     * 然后移除该占位符段落。通过 XmlCursor 在占位符段落之前插入表格元素。
+     */
+    private void replacePlaceholderWithTable(XWPFDocument doc, String placeholder,
+                                              Consumer<XWPFTable> tableFiller) {
+        List<IBodyElement> bodyElements = doc.getBodyElements();
+        for (int i = 0; i < bodyElements.size(); i++) {
+            IBodyElement elem = bodyElements.get(i);
+            if (elem instanceof XWPFParagraph) {
+                XWPFParagraph para = (XWPFParagraph) elem;
+                if (para.getText().contains(placeholder)) {
+                    XmlCursor cursor = para.getCTP().newCursor();
+                    XWPFTable table = doc.insertNewTbl(cursor);
+                    cursor.dispose();
+
+                    tableFiller.accept(table);
+
+                    doc.removeBodyElement(i + 1);
+                    return;
+                }
+            }
+        }
+        log.warn("Placeholder not found in template: {}", placeholder);
+    }
+
+    /**
+     * 向已创建的空白表格填充资产负债表关键科目数据。
+     */
+    private void fillBalanceSheetTable(XWPFTable table,
+                                        Map<String, Map<String, BigDecimal>> itemDateValues,
+                                        List<String> dateColumns) {
+        List<String[]> growthCols = buildGrowthCols(dateColumns);
+        int colCount = 1 + dateColumns.size() + growthCols.size();
+        int rowCount = 1 + BALANCE_SHEET_KEY_ITEMS.size() + 1;
+
+        for (int r = 0; r < rowCount; r++) {
+            ensureCellCount(table.createRow(), colCount);
+        }
+
+        // 表头行
+        XWPFTableRow headerRow = table.getRow(0);
+        setCellText(headerRow.getCell(0), "项目", true, null);
+        for (int i = 0; i < dateColumns.size(); i++) {
+            setCellText(headerRow.getCell(1 + i), dateColumns.get(i), true, null);
+        }
+        for (int i = 0; i < growthCols.size(); i++) {
+            setCellText(headerRow.getCell(1 + dateColumns.size() + i), growthCols.get(i)[0], true, null);
+        }
+
+        // 关键科目数据行
+        for (int r = 0; r < BALANCE_SHEET_KEY_ITEMS.size(); r++) {
+            String item = BALANCE_SHEET_KEY_ITEMS.get(r);
+            XWPFTableRow row = table.getRow(1 + r);
+            setCellText(row.getCell(0), item, false, null);
+
+            Map<String, BigDecimal> values = itemDateValues.get(item);
+            for (int c = 0; c < dateColumns.size(); c++) {
+                BigDecimal val = values != null ? values.get(dateColumns.get(c)) : null;
+                setCellText(row.getCell(1 + c), formatAmount(val), false, null);
+            }
+            for (int g = 0; g < growthCols.size(); g++) {
+                String[] ginfo = growthCols.get(g);
+                BigDecimal curVal = values != null ? values.get(ginfo[1]) : null;
+                BigDecimal prevVal = values != null ? values.get(ginfo[2]) : null;
+                setCellText(row.getCell(1 + dateColumns.size() + g),
+                        formatGrowthRate(curVal, prevVal), false, null);
+            }
+        }
+
+        // 资产负债率行
+        int lastRow = 1 + BALANCE_SHEET_KEY_ITEMS.size();
+        XWPFTableRow ratioRow = table.getRow(lastRow);
+        setCellText(ratioRow.getCell(0), "资产负债率", true, null);
+        for (int c = 0; c < dateColumns.size(); c++) {
+            String col = dateColumns.get(c);
+            Map<String, BigDecimal> assetVals = itemDateValues.get(ITEM_ASSET_TOTAL);
+            Map<String, BigDecimal> liabilityVals = itemDateValues.get(ITEM_LIABILITY_TOTAL);
+            BigDecimal asset = assetVals != null ? assetVals.get(col) : null;
+            BigDecimal liability = liabilityVals != null ? liabilityVals.get(col) : null;
+            setCellText(ratioRow.getCell(1 + c), formatLiabilityRatio(asset, liability), false, null);
+        }
+        for (int g = 0; g < growthCols.size(); g++) {
+            String[] ginfo = growthCols.get(g);
+            Map<String, BigDecimal> assetVals = itemDateValues.get(ITEM_ASSET_TOTAL);
+            Map<String, BigDecimal> liabilityVals = itemDateValues.get(ITEM_LIABILITY_TOTAL);
+            BigDecimal curAsset = assetVals != null ? assetVals.get(ginfo[1]) : null;
+            BigDecimal curLiability = liabilityVals != null ? liabilityVals.get(ginfo[1]) : null;
+            BigDecimal prevAsset = assetVals != null ? assetVals.get(ginfo[2]) : null;
+            BigDecimal prevLiability = liabilityVals != null ? liabilityVals.get(ginfo[2]) : null;
+            BigDecimal curRatio = calcLiabilityRatio(curAsset, curLiability);
+            BigDecimal prevRatio = calcLiabilityRatio(prevAsset, prevLiability);
+            setCellText(ratioRow.getCell(1 + dateColumns.size() + g),
+                    formatGrowthRate(curRatio, prevRatio), false, null);
+        }
+    }
+
+    /**
+     * 向已创建的空白表格填充利润表关键科目数据。
+     */
+    private void fillProfitSheetTable(XWPFTable table,
+                                       Map<String, Map<String, BigDecimal>> itemDateValues,
+                                       List<String> dateColumns) {
+        List<String[]> growthCols = buildGrowthCols(dateColumns);
+        int colCount = 1 + dateColumns.size() + growthCols.size();
+        int rowCount = 1 + PROFIT_SHEET_KEY_ITEMS.size() + 3;
+
+        for (int r = 0; r < rowCount; r++) {
+            ensureCellCount(table.createRow(), colCount);
+        }
+
+        // 表头行
+        XWPFTableRow headerRow = table.getRow(0);
+        setCellText(headerRow.getCell(0), "项目", true, null);
+        for (int i = 0; i < dateColumns.size(); i++) {
+            setCellText(headerRow.getCell(1 + i), dateColumns.get(i), true, null);
+        }
+        for (int i = 0; i < growthCols.size(); i++) {
+            setCellText(headerRow.getCell(1 + dateColumns.size() + i), growthCols.get(i)[0], true, null);
+        }
+
+        // 9 个基本科目
+        for (int r = 0; r < PROFIT_SHEET_KEY_ITEMS.size(); r++) {
+            String item = PROFIT_SHEET_KEY_ITEMS.get(r);
+            XWPFTableRow row = table.getRow(1 + r);
+            setCellText(row.getCell(0), item, false, null);
+
+            Map<String, BigDecimal> values = itemDateValues.get(item);
+            for (int c = 0; c < dateColumns.size(); c++) {
+                BigDecimal val = values != null ? values.get(dateColumns.get(c)) : null;
+                setCellText(row.getCell(1 + c), formatAmount(val), false, null);
+            }
+            for (int g = 0; g < growthCols.size(); g++) {
+                String[] ginfo = growthCols.get(g);
+                BigDecimal curVal = values != null ? values.get(ginfo[1]) : null;
+                BigDecimal prevVal = values != null ? values.get(ginfo[2]) : null;
+                setCellText(row.getCell(1 + dateColumns.size() + g),
+                        formatGrowthRate(curVal, prevVal), false, null);
+            }
+        }
+
+        // 计算行
+        int base = 1 + PROFIT_SHEET_KEY_ITEMS.size();
+        fillRatioRowAt(table, base, itemDateValues, dateColumns, growthCols, "毛利润率");
+        fillRatioRowAt(table, base + 1, itemDateValues, dateColumns, growthCols, "净利润率");
+        fillRatioRowAt(table, base + 2, itemDateValues, dateColumns, growthCols, "研发费用占比");
+    }
+
+    /**
+     * 填充利润表计算行（毛利润率/净利润率/研发费用占比）的值和增长率。
+     */
+    private void fillRatioRowAt(XWPFTable table, int rowIdx,
+                                 Map<String, Map<String, BigDecimal>> itemDateValues, List<String> dateColumns,
+                                 List<String[]> growthCols, String label) {
+
+        XWPFTableRow row = table.getRow(rowIdx);
+        setCellText(row.getCell(0), label, false, null);
+
+        for (int c = 0; c < dateColumns.size(); c++) {
+            String col = dateColumns.get(c);
+            String val;
+            if ("毛利润率".equals(label)) {
+                Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
+                Map<String, BigDecimal> costVals = itemDateValues.get(ITEM_COST);
+                BigDecimal rev = revVals != null ? revVals.get(col) : null;
+                BigDecimal cost = costVals != null ? costVals.get(col) : null;
+                val = (rev != null && cost != null && rev.compareTo(BigDecimal.ZERO) != 0)
+                        ? formatRatio(rev.subtract(cost), rev) : "-";
+            } else if ("净利润率".equals(label)) {
+                Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
+                Map<String, BigDecimal> profitVals = itemDateValues.get(ITEM_NET_PROFIT);
+                val = formatRatio(
+                        profitVals != null ? profitVals.get(col) : null,
+                        revVals != null ? revVals.get(col) : null);
+            } else {
+                Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
+                Map<String, BigDecimal> rdVals = itemDateValues.get(ITEM_RD_EXPENSE);
+                val = formatRatio(
+                        rdVals != null ? rdVals.get(col) : null,
+                        revVals != null ? revVals.get(col) : null);
+            }
+            setCellText(row.getCell(1 + c), val, false, null);
+        }
+
+        // 增长率
+        for (int g = 0; g < growthCols.size(); g++) {
+            String[] ginfo = growthCols.get(g);
+            BigDecimal curRatio = computeRatioForLabel(itemDateValues, ginfo[1], label);
+            BigDecimal prevRatio = computeRatioForLabel(itemDateValues, ginfo[2], label);
+            setCellText(row.getCell(1 + dateColumns.size() + g),
+                    formatGrowthRate(curRatio, prevRatio), false, null);
+        }
+    }
+
+    /**
+     * 计算指定标签（毛利润率/净利润率/研发费用占比）的比率值。
+     */
+    private BigDecimal computeRatioForLabel(Map<String, Map<String, BigDecimal>> itemDateValues,
+                                             String col, String label) {
+        if ("毛利润率".equals(label)) {
+            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
+            Map<String, BigDecimal> costVals = itemDateValues.get(ITEM_COST);
+            BigDecimal rev = revVals != null ? revVals.get(col) : null;
+            BigDecimal cost = costVals != null ? costVals.get(col) : null;
+            if (rev != null && cost != null && rev.compareTo(BigDecimal.ZERO) != 0) {
+                return rev.subtract(cost).divide(rev, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+            }
+        } else if ("净利润率".equals(label)) {
+            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
+            Map<String, BigDecimal> profitVals = itemDateValues.get(ITEM_NET_PROFIT);
+            BigDecimal rev = revVals != null ? revVals.get(col) : null;
+            BigDecimal profit = profitVals != null ? profitVals.get(col) : null;
+            if (profit != null && rev != null && rev.compareTo(BigDecimal.ZERO) != 0) {
+                return profit.divide(rev, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+            }
+        } else {
+            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
+            Map<String, BigDecimal> rdVals = itemDateValues.get(ITEM_RD_EXPENSE);
+            BigDecimal rev = revVals != null ? revVals.get(col) : null;
+            BigDecimal rd = rdVals != null ? rdVals.get(col) : null;
+            if (rd != null && rev != null && rev.compareTo(BigDecimal.ZERO) != 0) {
+                return rd.divide(rev, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal("100"));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 确保表格行有足够的单元格。
+     */
+    private void ensureCellCount(XWPFTableRow row, int count) {
+        while (row.getTableCells().size() < count) {
+            row.addNewTableCell();
+        }
+    }
+
+    /**
+     * 设置表格单元格文本和样式。
+     */
+    private void setCellText(XWPFTableCell cell, String text, boolean bold, String colorHex) {
+        XWPFParagraph p = cell.getParagraphs().isEmpty() ? cell.addParagraph() : cell.getParagraphs().get(0);
+        p.setAlignment(ParagraphAlignment.LEFT);
+        XWPFRun r = p.createRun();
+        r.setText(text != null ? text : "");
+        r.setFontSize(10);
+        r.setFontFamily("微软雅黑");
+        r.setBold(bold);
+        if (colorHex != null) {
+            r.setColor(colorHex);
+        }
+    }
+
+    /**
+     * 构建增长率列信息列表。
+     * 每个元素为 String[3]: [header, curCol, prevCol]
+     */
+    private List<String[]> buildGrowthCols(List<String> dateColumns) {
         List<String> yearEndCols = dateColumns.stream()
                 .filter(col -> col.matches("\\d{4}年"))
                 .collect(Collectors.toList());
-
-        String growthRateHeader = null;
-        String growthCurCol = null;
-        String growthPrevCol = null;
-        if (yearEndCols.size() >= 2) {
-            growthCurCol = yearEndCols.get(yearEndCols.size() - 1);
-            growthPrevCol = yearEndCols.get(yearEndCols.size() - 2);
-            growthRateHeader = extractYearFromColumn(growthCurCol) + "年增长率";
+        List<String[]> result = new ArrayList<>();
+        for (int i = 0; i < yearEndCols.size() - 1; i++) {
+            result.add(new String[]{
+                    extractYearFromColumn(yearEndCols.get(i)) + "年增长率",
+                    yearEndCols.get(i),
+                    yearEndCols.get(i + 1)
+            });
         }
-
-        boolean hasGrowthRate = growthRateHeader != null;
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("## 利润表关键科目\n\n");
-
-        // 表头
-        sb.append("| 项目 |");
-        for (String col : dateColumns) {
-            sb.append(" ").append(col).append(" |");
-        }
-        if (hasGrowthRate) {
-            sb.append(" ").append(growthRateHeader).append(" |");
-        }
-        sb.append("\n");
-
-        // 分隔行
-        int headerCount = dateColumns.size() + (hasGrowthRate ? 1 : 0);
-        sb.append("|");
-        for (int i = 0; i <= headerCount; i++) {
-            sb.append(" --- |");
-        }
-        sb.append("\n");
-
-        // 数据行（9 个基本科目）
-        for (String item : PROFIT_SHEET_KEY_ITEMS) {
-            sb.append("| ").append(item).append(" |");
-            Map<String, BigDecimal> values = itemDateValues.get(item);
-            for (String col : dateColumns) {
-                BigDecimal val = values != null ? values.get(col) : null;
-                sb.append(" ").append(formatAmount(val)).append(" |");
-            }
-            if (hasGrowthRate) {
-                BigDecimal curVal = values != null ? values.get(growthCurCol) : null;
-                BigDecimal prevVal = values != null ? values.get(growthPrevCol) : null;
-                sb.append(" ").append(formatGrowthRate(curVal, prevVal)).append(" |");
-            }
-            sb.append("\n");
-        }
-
-        // 毛利润率 = (营业收入 - 营业成本) / 营业收入 × 100%
-        sb.append("| 毛利润率 |");
-        for (String col : dateColumns) {
-            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
-            Map<String, BigDecimal> costVals = itemDateValues.get(ITEM_COST);
-            BigDecimal revenue = revVals != null ? revVals.get(col) : null;
-            BigDecimal cost = costVals != null ? costVals.get(col) : null;
-            if (revenue != null && cost != null && revenue.compareTo(BigDecimal.ZERO) != 0) {
-                sb.append(" ").append(formatRatio(revenue.subtract(cost), revenue)).append(" |");
-            } else {
-                sb.append(" - |");
-            }
-        }
-        if (hasGrowthRate) {
-            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
-            Map<String, BigDecimal> costVals = itemDateValues.get(ITEM_COST);
-            BigDecimal curRev = revVals != null ? revVals.get(growthCurCol) : null;
-            BigDecimal curCost = costVals != null ? costVals.get(growthCurCol) : null;
-            BigDecimal prevRev = revVals != null ? revVals.get(growthPrevCol) : null;
-            BigDecimal prevCost = costVals != null ? costVals.get(growthPrevCol) : null;
-            BigDecimal curRatio = (curRev != null && curCost != null && curRev.compareTo(BigDecimal.ZERO) != 0)
-                    ? curRev.subtract(curCost).divide(curRev, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                    : null;
-            BigDecimal prevRatio = (prevRev != null && prevCost != null && prevRev.compareTo(BigDecimal.ZERO) != 0)
-                    ? prevRev.subtract(prevCost).divide(prevRev, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                    : null;
-            sb.append(" ").append(formatGrowthRate(curRatio, prevRatio)).append(" |");
-        }
-        sb.append("\n");
-
-        // 净利润率 = 净利润 / 营业收入 × 100%
-        sb.append("| 净利润率 |");
-        for (String col : dateColumns) {
-            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
-            Map<String, BigDecimal> profitVals = itemDateValues.get(ITEM_NET_PROFIT);
-            BigDecimal revenue = revVals != null ? revVals.get(col) : null;
-            BigDecimal netProfit = profitVals != null ? profitVals.get(col) : null;
-            sb.append(" ").append(formatRatio(netProfit, revenue)).append(" |");
-        }
-        if (hasGrowthRate) {
-            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
-            Map<String, BigDecimal> profitVals = itemDateValues.get(ITEM_NET_PROFIT);
-            BigDecimal curRev = revVals != null ? revVals.get(growthCurCol) : null;
-            BigDecimal curProfit = profitVals != null ? profitVals.get(growthCurCol) : null;
-            BigDecimal prevRev = revVals != null ? revVals.get(growthPrevCol) : null;
-            BigDecimal prevProfit = profitVals != null ? profitVals.get(growthPrevCol) : null;
-            BigDecimal curRatio = (curProfit != null && curRev != null && curRev.compareTo(BigDecimal.ZERO) != 0)
-                    ? curProfit.divide(curRev, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                    : null;
-            BigDecimal prevRatio = (prevProfit != null && prevRev != null && prevRev.compareTo(BigDecimal.ZERO) != 0)
-                    ? prevProfit.divide(prevRev, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                    : null;
-            sb.append(" ").append(formatGrowthRate(curRatio, prevRatio)).append(" |");
-        }
-        sb.append("\n");
-
-        // 研发费用占比 = 研发费用 / 营业收入 × 100%
-        sb.append("| 研发费用占比 |");
-        for (String col : dateColumns) {
-            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
-            Map<String, BigDecimal> rdVals = itemDateValues.get(ITEM_RD_EXPENSE);
-            BigDecimal revenue = revVals != null ? revVals.get(col) : null;
-            BigDecimal rdExpense = rdVals != null ? rdVals.get(col) : null;
-            sb.append(" ").append(formatRatio(rdExpense, revenue)).append(" |");
-        }
-        if (hasGrowthRate) {
-            Map<String, BigDecimal> revVals = itemDateValues.get(ITEM_REVENUE);
-            Map<String, BigDecimal> rdVals = itemDateValues.get(ITEM_RD_EXPENSE);
-            BigDecimal curRev = revVals != null ? revVals.get(growthCurCol) : null;
-            BigDecimal curRD = rdVals != null ? rdVals.get(growthCurCol) : null;
-            BigDecimal prevRev = revVals != null ? revVals.get(growthPrevCol) : null;
-            BigDecimal prevRD = rdVals != null ? rdVals.get(growthPrevCol) : null;
-            BigDecimal curRatio = (curRD != null && curRev != null && curRev.compareTo(BigDecimal.ZERO) != 0)
-                    ? curRD.divide(curRev, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                    : null;
-            BigDecimal prevRatio = (prevRD != null && prevRev != null && prevRev.compareTo(BigDecimal.ZERO) != 0)
-                    ? prevRD.divide(prevRev, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100"))
-                    : null;
-            sb.append(" ").append(formatGrowthRate(curRatio, prevRatio)).append(" |");
-        }
-        sb.append("\n");
-
-        return sb.toString();
+        return result;
     }
-
-    /** 提交时从请求体解析的文件项（attId + businessType key + reportDate），businessType 在 buildBatchAddItems 中回填为 docTypeId */
     @lombok.AllArgsConstructor
     private static class SubmitFileMeta {
         final String attId;
