@@ -88,10 +88,10 @@ CommonResp.error(-1, "错误信息");             // 业务异常
 ### 5. 事务管理
 
 所有写操作 Service 方法加 `@Transactional(rollbackFor = Exception.class)`：
-- `uploadFile()` — 上传文件 + 写入 application_att
-- `submitMaterials()` — 创建申请记录 + 批量新增 + 写入 application_doc + 清理 application_att
-- `confirmControllerName()` — 更新 application_record
-- `deleteAttachment()` — 删除 application_att 记录
+- `uploadFile()` — 上传文件 + 写入 sxd_att
+- `submitMaterials()` — 创建申请记录 + 批量新增 + 写入 sxd_doc + 清理 sxd_att
+- `confirmControllerName()` — 更新 sxd_record
+- `deleteAttachment()` — 删除 sxd_att 记录
 
 ### 6. 外部 API 调用模式
 
@@ -106,7 +106,19 @@ respBody.getDataAs(DocBatchAddData.class);
 
 关键校验步骤：`respBody == null` → 抛异常 → `!respBody.isSuccess()` → 抛异常（对外部 API data 可能还需要 `respBody.getData() == null` 判断）。
 
-### 7. API 路径
+### 7. 前端 Token 鉴权
+
+所有 `/techfin/sxd/**` 请求需携带请求头 `Authorization: Bearer <encrypted-token>`，token 为 AES/ECB/PKCS5Padding 加密后的 Base64 字符串，明文格式：`8位用户编号 + key`。
+
+解密后的用户编号存入 `request.setAttribute("userId", ...)` 供业务层使用。
+
+相关代码：
+- `TokenInterceptor` — 拦截 `/sxd/**` 路径，提取并解密 token
+- `AesUtils` — AES 解密工具类
+- `WebMvcConfig` — 注册拦截器
+- 配置文件：`aes.key` — AES 密钥
+
+### 8. API 路径
 
 Context-path: `/techfin`
 Controller base: `/sxd`
@@ -115,16 +127,16 @@ Controller base: `/sxd`
 - `POST /techfin/sxd/upload-attachment` — 上传附件
 - `DELETE /techfin/sxd/delete-attachment/{att_id}` — 删除附件
 - `POST /techfin/sxd/submit-materials` — 提交资料
-- `GET /techfin/sxd/controller-name/{customer_no}` — 查询实控人
+- `GET /techfin/sxd/controller-name/{cst_id}` — 查询实控人
 - `PUT /techfin/sxd/application-record/controller-name` — 确认实控人
 
 ## Database Tables
 
 | 表名 | 主键 | 说明 |
 |------|------|------|
-| `application_att` | `id` (BIGINT AUTO_INCREMENT) | 附件元信息，`att_id` 唯一索引 |
-| `application_record` | `task_id` (VARCHAR(64)) | 申请记录，手工生成 `TASK-<32位hex>` |
-| `application_doc` | `doc_id` (VARCHAR(64)) | 文档明细，外部 API 返回的 ID |
+| `sxd_att` | `id` (BIGINT AUTO_INCREMENT) | 附件元信息，`att_id` 唯一索引 |
+| `sxd_record` | `task_id` (VARCHAR(64)) | 申请记录，手工生成 `TASK-<32位hex>` |
+| `sxd_doc` | `doc_id` (VARCHAR(64)) | 文档明细，外部 API 返回的 ID |
 | `sxd_profile` | `cst_id` (VARCHAR(200)) | 客户信息表，以 `cst_id` 为主键 |
 
 详见 `docs/init-tables.sql`。
@@ -135,6 +147,7 @@ Controller base: `/sxd`
 - `api.doc-type.finance` / `api.doc-type.business` — 文档类型 ID 映射
 - `file.upload.allowed-extensions.*` — 不同业务类型的文件扩展名白名单
 - `api.default-token` — 外部 API 鉴权 token
+- `aes.key` — 前端 Token AES 解密密钥
 - `mybatis-plus.configuration.log-impl` — SQL 日志
 
 配置类：`ApiProperties`（prefix=`api`）、`FileUploadConfig`（prefix=`file.upload`）

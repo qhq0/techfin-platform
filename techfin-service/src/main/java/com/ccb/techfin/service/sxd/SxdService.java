@@ -28,7 +28,8 @@ public interface SxdService {
      * 生成 Word 报告，包含企业基本信息、资产负债表关键科目和利润表关键科目。
      *
      * @param taskId 申请记录的任务 ID
+     * @param cstId  客户编号（前端传入，无需查 sxd_record）
      * @return Word 文档（.docx）字节数组
      */
-    byte[] generateReport(String taskId);
+    byte[] generateReport(String taskId, String cstId);
 }

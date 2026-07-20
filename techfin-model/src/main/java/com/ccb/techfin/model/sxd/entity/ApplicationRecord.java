@@ -10,7 +10,7 @@ import lombok.Data;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("application_record")
+@TableName("sxd_record")
 public class ApplicationRecord {
 
     @TableId(value = "task_id", type = IdType.INPUT)
@@ -19,8 +19,8 @@ public class ApplicationRecord {
     @TableField("credit_code")
     private String creditCode;
 
-    @TableField("customer_no")
-    private String customerNo;
+    @TableField("cst_id")
+    private String cstId;
 
     @TableField("status")
     private TaskStatus status;

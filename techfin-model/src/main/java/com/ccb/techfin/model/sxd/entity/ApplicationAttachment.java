@@ -11,13 +11,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 /**
- * 附件上传记录，独立实体映射 application_att 表。
+ * 附件上传记录，独立实体映射 sxd_att 表。
  * 上传时记录文件元信息，提交时根据 attId 查找匹配。
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("application_att")
+@TableName("sxd_att")
 public class ApplicationAttachment {
 
     @TableId(type = IdType.AUTO)

@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 /**
  * 定时清理任务。
  * <ul>
- *   <li>每天凌晨 2:00 清理 application_att 中创建超过 24 小时的孤立记录</li>
- *   <li>每天凌晨 2:00 清理 application_doc 中关联状态为 UNFINISHED 的记录</li>
+ *   <li>每天凌晨 2:00 清理 sxd_att 中创建超过 24 小时的孤立记录</li>
+ *   <li>每天凌晨 2:00 清理 sxd_doc 中关联状态为 UNFINISHED 的记录</li>
  * </ul>
  */
 @Slf4j
@@ -45,7 +45,7 @@ public class AttachmentCleanupTask {
     }
 
     /**
-     * 清理 application_att 中创建时间超过 24 小时且未被引用的孤立附件记录。
+     * 清理 sxd_att 中创建时间超过 24 小时且未被引用的孤立附件记录。
      */
     private void cleanupOrphanAttachments() {
         LocalDateTime deadline = LocalDateTime.now().minusHours(24);
@@ -69,7 +69,7 @@ public class AttachmentCleanupTask {
     }
 
     /**
-     * 清理 application_doc 中关联任务状态为 UNFINISHED 的记录。
+     * 清理 sxd_doc 中关联任务状态为 UNFINISHED 的记录。
      * 先查找所有 UNFINISHED 的 task_id，再批量删除对应的文档记录。
      */
     private void cleanupUnfinishedDocEntries() {

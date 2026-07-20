@@ -17,7 +17,7 @@ public class SubmitMaterialsRequest {
     private String creditCode;
 
     /** 客户编号 */
-    private String customerNo;
+    private String cstId;
 
     /** 财务报表文件列表（需携带 reportDate） */
     private List<SubmitFileItem> financeFiles;

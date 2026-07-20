@@ -2,6 +2,7 @@ package com.ccb.techfin.controller.sxd;
 
 import com.ccb.techfin.common.result.CommonResp;
 import com.ccb.techfin.model.sxd.dto.request.ConfirmControllerRequest;
+import com.ccb.techfin.model.sxd.dto.request.ReportRequest;
 import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
 import com.ccb.techfin.model.sxd.dto.response.ExtractDataResponse;
 import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,7 +25,7 @@ public class SxdController {
     private final CustomerService customerService;
 
     /**
-     * 上传单个附件文件到外部存储，同时将文件元信息记录到 application_att 表。
+     * 上传单个附件文件到外部存储，同时将文件元信息记录到 sxd_att 表。
      */
     @PostMapping(value = "/upload-attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResp<String> uploadAttachment(
@@ -34,7 +36,7 @@ public class SxdController {
     }
 
     /**
-     * 删除单个附件记录（从 application_att 表中删除）。
+     * 删除单个附件记录（从 sxd_att 表中删除）。
      */
     @DeleteMapping("/delete-attachment/{att_id}")
     public CommonResp<Void> deleteAttachment(@PathVariable("att_id") String attId) {
@@ -47,7 +49,7 @@ public class SxdController {
     }
 
     /**
-     * 提交资料：校验信用代码和客户编号，从 application_att 读取已上传附件元信息，
+     * 提交资料：校验信用代码和客户编号，从 sxd_att 读取已上传附件元信息，
      * 创建以 taskId 为主键的申请记录，批量新增文档。
      */
     @PostMapping("/submit-materials")
@@ -59,15 +61,27 @@ public class SxdController {
     /**
      * 根据客户编号查询实控人姓名。
      */
-    @GetMapping("/controller-name/{customer_no}")
-    public CommonResp<String> getControllerName(@PathVariable("customer_no") String customerNo) {
-        String name = customerService.getControllerName(customerNo);
+    @GetMapping("/controller-name/{cst_id}")
+    public CommonResp<String> getControllerName(@PathVariable("cst_id") String cstId) {
+        String name = customerService.getControllerName(cstId);
         return CommonResp.success(name);
+    }
+
+    /**
+     * 校验当前用户是否拥有该客户的管户权。
+     */
+    @PostMapping("/cust-ownership")
+    public CommonResp<Boolean> getCustOwnership(@RequestBody ReportRequest request,
+                                                 HttpServletRequest servletRequest) {
+        String userId = (String) servletRequest.getAttribute("userId");
+        boolean hasOwnership = customerService.getCustOwnership(
+                request.getTaskId(), request.getCstId(), userId);
+        return CommonResp.success(hasOwnership);
     }
 
 
     /**
-     * 确认/修改实际控制人姓名，回填到 application_record 表。
+     * 确认/修改实际控制人姓名，回填到 sxd_record 表。
      */
     @PutMapping("/application-record/controller-name")
     public CommonResp<Void> confirmControllerName(@RequestBody ConfirmControllerRequest request) {
@@ -99,7 +113,7 @@ public class SxdController {
 
     /**
      * 导出商业计划书的提取结果 xlsx 文件。
-     * 根据 taskId 查询 application_doc 中商业计划书类型的文档，调用外部导出资料接口直接返回文件流。
+     * 根据 taskId 查询 sxd_doc 中商业计划书类型的文档，调用外部导出资料接口直接返回文件流。
      */
     @GetMapping("/export-data/business/{task_id}")
     public ResponseEntity<byte[]> exportBusinessData(@PathVariable("task_id") String taskId) {
@@ -114,7 +128,7 @@ public class SxdController {
 
     /**
      * 导出财务报表的提取结果 zip 压缩包。
-     * 根据 taskId 查询 application_doc 中财务报表类型的文档列表，逐个调用外部导出资料接口，
+     * 根据 taskId 查询 sxd_doc 中财务报表类型的文档列表，逐个调用外部导出资料接口，
      * 将所有 xlsx 打包为 zip 返回。
      */
     @GetMapping("/export-data/finance/{task_id}")
@@ -129,11 +143,10 @@ public class SxdController {
 
     /**
      * 生成 Word 报告，包含企业基本信息、资产负债表关键科目和利润表关键科目。
-     * 根据 taskId 获取申请记录的企业信息和财务报表数据，从模板生成 Word 文档。
      */
-    @GetMapping("/report/{task_id}")
-    public ResponseEntity<byte[]> generateReport(@PathVariable("task_id") String taskId) {
-        byte[] data = sxdService.generateReport(taskId);
+    @PostMapping("/report")
+    public ResponseEntity<byte[]> generateReport(@RequestBody ReportRequest request) {
+        byte[] data = sxdService.generateReport(request.getTaskId(), request.getCstId());
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))

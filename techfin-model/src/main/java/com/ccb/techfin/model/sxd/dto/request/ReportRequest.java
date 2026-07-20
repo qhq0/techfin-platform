@@ -6,11 +6,11 @@ import lombok.Data;
 
 @Data
 @JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
-public class ConfirmControllerRequest {
+public class ReportRequest {
 
-    /** 任务 ID，对应 sxd_record.task_id */
+    /** 任务 ID */
     private String taskId;
 
-    /** 实际控制人姓名（用户确认或修改后的值） */
-    private String actCntlrNm;
+    /** 客户编号 */
+    private String cstId;
 }

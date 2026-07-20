@@ -197,7 +197,7 @@ public class SxdServiceImpl implements SxdService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public String submitMaterials(SubmitMaterialsRequest request) {
-        validateRequiredParams(request.getCreditCode(), request.getCustomerNo());
+        validateRequiredParams(request.getCreditCode(), request.getCstId());
 
         // 从请求体收集文件项，标记 businessType key（"finance"/"business"）
         List<SubmitFileMeta> allItems = new ArrayList<>();
@@ -221,14 +221,14 @@ public class SxdServiceImpl implements SxdService {
         ApplicationRecord record = new ApplicationRecord();
         record.setTaskId(batchTaskId);
         record.setCreditCode(request.getCreditCode());
-        record.setCustomerNo(request.getCustomerNo());
+        record.setCstId(request.getCstId());
         record.setStatus(TaskStatus.UNFINISHED);
         record.setCreatedAt(now);
         record.setUpdatedAt(now);
         sxdMapper.insert(record);
 
         try {
-            // 构建批量新增参数（从 application_att 查文件名/大小，docTypeId 从 financeFiles/businessFiles 分类确定）
+            // 构建批量新增参数（从 sxd_att 查文件名/大小，docTypeId 从 financeFiles/businessFile 分类确定）
             List<DocBatchAddItem> batchItems = buildBatchAddItems(allItems);
             ExternalResponse batchResponse = batchAddDocs(batchItems, token);
 
@@ -252,7 +252,7 @@ public class SxdServiceImpl implements SxdService {
                 docEntryMapper.insert(entry);
             }
 
-            // 提交成功后删除 application_att 中对应的附件记录
+            // 提交成功后删除 sxd_att 中对应的附件记录
             for (SubmitFileMeta item : allItems) {
                 attachmentMapper.delete(
                         new LambdaQueryWrapper<ApplicationAttachment>()
@@ -274,11 +274,11 @@ public class SxdServiceImpl implements SxdService {
         }
     }
 
-    private void validateRequiredParams(String creditCode, String customerNo) {
+    private void validateRequiredParams(String creditCode, String cstId) {
         if (!StringUtils.hasText(creditCode)) {
             throw new BusinessException("PARAM_MISSING", "统一社会信用代码不能为空");
         }
-        if (!StringUtils.hasText(customerNo)) {
+        if (!StringUtils.hasText(cstId)) {
             throw new BusinessException("PARAM_MISSING", "客户编号不能为空");
         }
         if (!creditCode.matches("^[0-9A-Z]{18}$")) {
@@ -325,7 +325,7 @@ public class SxdServiceImpl implements SxdService {
 
     /**
      * 根据请求中的文件项列表构建批量新增请求参数。
-     * fileName/fileSize 从 application_att 表查询，docTypeId 根据 financeFiles/businessFiles 分类从配置获取。
+     * fileName/fileSize 从 sxd_att 表查询，docTypeId 根据 financeFiles/businessFile 分类从配置获取。
      */
     private List<DocBatchAddItem> buildBatchAddItems(List<SubmitFileMeta> items) {
         List<DocBatchAddItem> result = new ArrayList<>();
@@ -339,7 +339,7 @@ public class SxdServiceImpl implements SxdService {
                 throw new BusinessException("INVALID_BUSINESS_TYPE",
                         "未知的业务类型：" + item.businessType);
             }
-            // 从 application_att 查询文件元信息
+            // 从 sxd_att 查询文件元信息
             ApplicationAttachment att = attachmentMapper.selectOne(
                     new LambdaQueryWrapper<ApplicationAttachment>()
                             .eq(ApplicationAttachment::getAttId, item.attId));
@@ -715,20 +715,21 @@ public class SxdServiceImpl implements SxdService {
     // ========== 报告生成功能 ==========
 
     @Override
-    public byte[] generateReport(String taskId) {
-        // ============ 查询申请记录和企业信息 ============
+    public byte[] generateReport(String taskId, String cstId) {
+        // ============ 校验任务存在 ============
         ApplicationRecord record = sxdMapper.selectById(taskId);
         if (record == null) {
             throw new BusinessException("TASK_NOT_FOUND",
                     "任务 [" + taskId + "] 不存在");
         }
-        String customerNo = record.getCustomerNo();
+
+        // ============ 查询企业信息 ============
         CustomerProfile customerProfile = null;
-        if (customerNo != null && !customerNo.isEmpty()) {
+        if (cstId != null && !cstId.isEmpty()) {
             try {
-                customerProfile = customerService.getCustomerProfile(customerNo);
+                customerProfile = customerService.getCustomerProfile(cstId);
             } catch (BusinessException e) {
-                log.warn("Customer profile not found for customerNo={}: {}", customerNo, e.getMessage());
+                log.warn("Customer profile not found for cstId={}: {}", cstId, e.getMessage());
             }
         }
 

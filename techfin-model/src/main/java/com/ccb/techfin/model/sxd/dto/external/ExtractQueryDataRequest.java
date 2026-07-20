@@ -16,7 +16,7 @@ import lombok.NoArgsConstructor;
 @JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 public class ExtractQueryDataRequest {
 
-    /** 文档 ID（来自 application_doc.doc_id） */
+    /** 文档 ID（来自 sxd_doc.doc_id） */
     private Long docId;
 
     /** 表名，对应商业计划书提取的不同部分 */

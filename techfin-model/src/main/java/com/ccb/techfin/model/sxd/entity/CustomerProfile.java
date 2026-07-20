@@ -155,7 +155,15 @@ public class CustomerProfile {
     @TableField("if_rad_alarm")
     private String ifRadAlarm;
 
-    /** 数据业务日期（用于排序取最新） */
+    /** 管户客户经理编号 */
+    @TableField("cst_mngacc_cstmgr_id")
+    private String cstMngaccCstmgrId;
+
+    /** 管户支行编号 */
+    @TableField("cst_mngacc_inst_supr_insid")
+    private String cstMngaccInstSuprInsid;
+
+    /** 数据业务日期 */
     @TableField("data_bsn_dt")
     private LocalDate dataBsnDt;
 }

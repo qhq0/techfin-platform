@@ -11,10 +11,10 @@ CREATE DATABASE IF NOT EXISTS mydb
 USE mydb;
 
 -- ------------------------------------------------------------
--- 1. application_att — 附件元信息表（独立实体）
+-- 1. sxd_att — 附件元信息表（独立实体）
 --    上传时写入，提交时查询 fileName/fileSize/businessType 用于外部 API
 -- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS application_att (
+CREATE TABLE IF NOT EXISTS sxd_att (
     id            BIGINT       NOT NULL AUTO_INCREMENT COMMENT '自增主键',
     att_id        VARCHAR(64)  NOT NULL                COMMENT '附件上传返回的附件 ID',
     file_name     VARCHAR(255) DEFAULT NULL             COMMENT '上传时的原始文件名',
@@ -26,13 +26,13 @@ CREATE TABLE IF NOT EXISTS application_att (
 
 
 -- ------------------------------------------------------------
--- 2. application_record — 申请记录表
+-- 2. sxd_record — 申请记录表
 --    提交资料时创建，主键为 task_id，无外键约束
 -- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS application_record (
+CREATE TABLE IF NOT EXISTS sxd_record (
     task_id     VARCHAR(64)  NOT NULL                COMMENT '任务 ID，格式 TASK-<32位hex>',
     credit_code VARCHAR(18)  NOT NULL                COMMENT '统一社会信用代码',
-    customer_no VARCHAR(64)  NOT NULL                COMMENT '客户编号',
+    cst_id      VARCHAR(64)  NOT NULL                COMMENT '客户编号',
     status      VARCHAR(32)  NOT NULL DEFAULT 'UNFINISHED' COMMENT '任务状态：UNFINISHED（未完成）/ COMPLETED（已完成）',
     act_cntlr_nm VARCHAR(200) DEFAULT NULL             COMMENT '实际控制人姓名，用户确认后回填',
     created_at  DATETIME     NOT NULL                COMMENT '创建时间',
@@ -42,12 +42,12 @@ CREATE TABLE IF NOT EXISTS application_record (
 
 
 -- ------------------------------------------------------------
--- 3. application_doc — 文档明细表（集合表）
+-- 3. sxd_doc — 文档明细表（集合表）
 --    每条记录对应外部 API 返回的一条文档，DOC_ID 全局唯一
 -- ------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS application_doc (
+CREATE TABLE IF NOT EXISTS sxd_doc (
     doc_id        VARCHAR(64)  NOT NULL                COMMENT '资料批量新增返回的文档 ID',
-    task_id       VARCHAR(64)  NOT NULL                COMMENT '关联 application_record.task_id',
+    task_id       VARCHAR(64)  NOT NULL                COMMENT '关联 sxd_record.task_id',
     business_type VARCHAR(32)  DEFAULT NULL             COMMENT '业务类型（docTypeId 值），由 financeFiles/businessFile 分类从配置 api.doc-type.* 获取',
     report_date   VARCHAR(10)  DEFAULT NULL             COMMENT '财报报告日期（仅 finance 类型有值）',
     PRIMARY KEY (doc_id),

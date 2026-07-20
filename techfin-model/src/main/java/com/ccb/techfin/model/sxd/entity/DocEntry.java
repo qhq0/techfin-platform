@@ -8,12 +8,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * 批量新增后返回的文档信息，独立实体映射 application_doc 表。
+ * 批量新增后返回的文档信息，独立实体映射 sxd_doc 表。
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@TableName("application_doc")
+@TableName("sxd_doc")
 public class DocEntry {
 
     /** 资料批量新增返回的文档 ID（全局唯一，用作主键） */
