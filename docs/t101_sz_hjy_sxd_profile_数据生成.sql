@@ -1,11 +1,12 @@
 -- ======================================================================
 -- 文件名：客户信息表_随机数据.sql
 -- 目标表：t101_sz_hjy_sxd_profile（善新贷材料生成结果表）
--- 功能：基于表结构，使用 MySQL 内置随机函数批量生成 200 条随机测试数据
+-- 功能：基于表结构及字段备注，使用 MySQL 内置随机函数批量生成 200 条随机测试数据
 -- 说明：
 --   1. 该表无主键，故直接 INSERT，无需处理主键冲突
---   2. 复用 random_xxx() 自定义函数统一字段生成逻辑，便于维护
+--   2. 复用随机函数统一字段生成逻辑，便于维护
 --   3. 所有字符串字段长度均控制在列定义上限以内
+--   4. 字段值分布参考表定义中的「备注」说明（如 0/1 枚举、缺省值 -99 / - 等）
 -- 使用：
 --   先执行 docs/客户信息表.sql 建表，再执行本文件
 --   CALL generate_random_profile(200);  -- 可改条数
@@ -21,11 +22,12 @@ DROP FUNCTION IF EXISTS `rand_cst_id`;
 DROP FUNCTION IF EXISTS `rand_credit_code`;
 DROP FUNCTION IF EXISTS `rand_cn_name`;
 DROP FUNCTION IF EXISTS `rand_company_name`;
-DROP FUNCTION IF EXISTS `rand_phone`;
 DROP FUNCTION IF EXISTS `rand_amount`;
 DROP FUNCTION IF EXISTS `rand_date_str`;
+DROP FUNCTION IF EXISTS `rand_date_str_dmy`;
 DROP FUNCTION IF EXISTS `rand_address`;
 DROP FUNCTION IF EXISTS `rand_scope`;
+DROP FUNCTION IF EXISTS `rand_default_or_value`;
 
 DELIMITER $$
 
@@ -36,8 +38,7 @@ BEGIN
     RETURN CONCAT('CST', LPAD(FLOOR(RAND() * 10000000000), 10, '0'));
 END$$
 
--- 统一社会信用代码：18位（1位登记管理部门 + 1位机构类别 + 6位行政区划 + 9位主体识别码 + 1位校验码）
--- 此处简化为 18 位大写字母+数字组合
+-- 统一社会信用代码：18位（简化为大写字母+数字组合）
 CREATE FUNCTION `rand_credit_code`() RETURNS VARCHAR(200)
 DETERMINISTIC
 BEGIN
@@ -61,7 +62,6 @@ BEGIN
     DECLARE sname CHAR(1);
     DECLARE gname VARCHAR(2);
     SET sname = SUBSTRING(surnames, FLOOR(RAND() * CHAR_LENGTH(surnames)) + 1, 1);
-    -- 取 1~2 个名字字符
     SET gname = SUBSTRING(given_chars, FLOOR(RAND() * CHAR_LENGTH(given_chars)) + 1, 1);
     IF RAND() > 0.5 THEN
         SET gname = CONCAT(gname, SUBSTRING(given_chars, FLOOR(RAND() * CHAR_LENGTH(given_chars)) + 1, 1));
@@ -87,8 +87,8 @@ BEGIN
     RETURN CONCAT(region, rand_cn_name(), industry, suffix);
 END$$
 
--- 随机金额字符串：万元为单位，保留两位小数
-CREATE FUNCTION `rand_amount`(min_wan INT, max_wan INT) RETURNS VARCHAR(100)
+-- 随机正数金额字符串（万元为单位，保留两位小数）
+CREATE FUNCTION `rand_amount`(min_wan DECIMAL(12,2), max_wan DECIMAL(12,2)) RETURNS VARCHAR(100)
 DETERMINISTIC
 BEGIN
     RETURN CAST(ROUND(RAND() * (max_wan - min_wan) + min_wan, 2) AS CHAR);
@@ -101,6 +101,15 @@ BEGIN
     DECLARE base_date DATE;
     SET base_date := DATE_ADD(MAKEDATE(start_year, 1), INTERVAL FLOOR(RAND() * DATEDIFF(MAKEDATE(end_year, 365), MAKEDATE(start_year, 1))) DAY);
     RETURN DATE_FORMAT(base_date, '%Y-%m-%d');
+END$$
+
+-- 随机日期字符串（ddMMMyyyy 格式，如 24Apr2026），范围 [start_year, end_year]
+CREATE FUNCTION `rand_date_str_dmy`(start_year INT, end_year INT) RETURNS VARCHAR(50)
+DETERMINISTIC
+BEGIN
+    DECLARE base_date DATE;
+    SET base_date := DATE_ADD(MAKEDATE(start_year, 1), INTERVAL FLOOR(RAND() * DATEDIFF(MAKEDATE(end_year, 365), MAKEDATE(start_year, 1))) DAY);
+    RETURN DATE_FORMAT(base_date, '%d%b%Y');
 END$$
 
 -- 随机注册地址
@@ -136,6 +145,10 @@ BEGIN
     RETURN CONCAT(result, '。（依法须经批准的项目，经相关部门批准后方可开展经营活动）');
 END$$
 
+-- 按概率返回一个值或缺省标记：p_default 为返回缺省值的概率(0~1)
+-- 返回 default_val 或一个由生成函数 gen_func 计算的值
+-- 由于 MySQL 函数不能动态执行 SQL，这里直接在外层用 IF 逻辑，此函数仅作说明，不再定义
+
 DELIMITER ;
 
 -- ---------------------------------------------------------------------
@@ -149,12 +162,30 @@ BEGIN
     DECLARE i INT DEFAULT 0;
     DECLARE v_if_loan VARCHAR(50);
     DECLARE v_yuqi_flag VARCHAR(50);
+    DECLARE v_kc_score VARCHAR(50);
+    DECLARE v_entp_ptnt VARCHAR(50);
+    DECLARE v_entp_ptnt_new VARCHAR(50);
+    DECLARE v_entp_ivt VARCHAR(50);
+    DECLARE v_clst5 VARCHAR(50);
 
     WHILE i < p_count DO
-        -- 是否贷款客户：70% 是
-        SET v_if_loan := IF(RAND() < 0.7, '是', '否');
-        -- 是否逾期：仅贷款客户可能逾期，整体逾期率约 12%
-        SET v_yuqi_flag := IF(v_if_loan = '是' AND RAND() < 0.12, '是', '否');
+        -- 是否我行贷款客户（0：否，1：是），贷款客户占 65%
+        SET v_if_loan := IF(RAND() < 0.65, '1', '0');
+        -- 近两年逾期：仅贷款客户可能逾期，整体逾期率约 10%
+        SET v_yuqi_flag := IF(v_if_loan = '1' AND RAND() < 0.10, '1', '0');
+
+        -- 科创分：5% 概率为 -99（没匹配到数据），其余 0~500 之间带两位小数
+        IF RAND() < 0.05 THEN
+            SET v_kc_score := '-99';
+        ELSE
+            SET v_kc_score := CONCAT(CAST(FLOOR(RAND() * 500) AS CHAR), '.', LPAD(CAST(FLOOR(RAND() * 100) AS CHAR), 2, '0'));
+        END IF;
+
+        -- 专利数量/实用新型/发明/软著：10% 概率为 -99，其余匹配备注示例的小数值
+        IF RAND() < 0.10 THEN SET v_entp_ptnt := '-99'; ELSE SET v_entp_ptnt := CAST(FLOOR(RAND() * 50) + 1 AS CHAR); END IF;
+        IF RAND() < 0.10 THEN SET v_entp_ptnt_new := '-99'; ELSE SET v_entp_ptnt_new := CAST(FLOOR(RAND() * 30) + 1 AS CHAR); END IF;
+        IF RAND() < 0.15 THEN SET v_entp_ivt := '-99'; ELSE SET v_entp_ivt := CAST(FLOOR(RAND() * 20) AS CHAR); END IF;
+        IF RAND() < 0.15 THEN SET v_clst5 := '-99'; ELSE SET v_clst5 := CAST(FLOOR(RAND() * 30) AS CHAR); END IF;
 
         INSERT INTO t101_sz_hjy_sxd_profile (
             data_bsn_dt, etl_dt, cst_id, cst_nm, fd_dt, lgl_rprs_nm, act_cntlr_nm,
@@ -164,6 +195,7 @@ BEGIN
             if_loan, product_name, loan_amount, loan_term, loan_balance,
             dep_bal, dep_bal_dt, dep_aadbal, acc_start_dt, acc_type,
             isug_pnum, avg_12_isug_amt, if_yuqi, ltgtrltd_ind, if_rad_alarm,
+            cst_mngacc_cstmgr_id, cst_mngacc_inst_supr_insid,
             byzd1, byzd2, byzd3, byzd4, byzd5, byzd6, byzd7, byzd8, byzd9, byzd10
         ) VALUES (
             -- data_bsn_dt / etl_dt：近 1 年内的业务日期和跑批日期
@@ -171,41 +203,81 @@ BEGIN
             STR_TO_DATE(rand_date_str(2025, 2026), '%Y-%m-%d'),
             rand_cst_id(),
             rand_company_name(),
-            rand_date_str(1990, 2024),                          -- 成立日期
-            rand_cn_name(),                                     -- 法定代表人
-            rand_cn_name(),                                    -- 实控人姓名
-            CONCAT(rand_amount(100, 50000), '万元'),            -- 注册资本
-            CONCAT(rand_amount(50, 30000), '万元'),            -- 实收资本
+            rand_date_str(1990, 2024),                                          -- 成立时间（YYYY-MM-DD）
+            rand_cn_name(),                                                     -- 法定代表人
+            rand_cn_name(),                                                    -- 实控人姓名
+            CONCAT(rand_amount(100, 50000), '万元'),                            -- 注册资本
+            CONCAT(rand_amount(50, 30000), '万元'),                            -- 实收资本
             rand_credit_code(),
-            ELT(FLOOR(RAND()*4)+1, '有限责任公司','股份有限公司','私营独资企业','外商投资企业'),  -- CPCT_TPCD 企业类型
-            ELT(FLOOR(RAND()*3)+1, '中型','小型','微型'),       -- 企业规模
+            ELT(FLOOR(RAND()*4)+1, '有限责任公司','股份有限公司','私营独资企业','外商投资企业'),  -- 企业类型
+            -- 企业规模：小型占 60%，中型 25%，微型 15%（备注示例为"小型"）
+            ELT(FLOOR(RAND()*20)+1,
+                '小型','小型','小型','小型','小型','小型','小型','小型','小型','小型',
+                '小型','小型','中型','中型','中型','中型','中型','微型','微型','微型'),
             rand_address(),
             rand_scope(),
-            ELT(FLOOR(RAND()*6)+1, '软件和信息技术服务业','医药制造业','专用设备制造业','计算机通信和其他电子设备制造业','研究和试验发展','专业技术服务业'),
-            ELT(FLOOR(RAND()*4)+1, '国家高新技术企业','专精特新中小企业','科技型中小企业',''),  -- 科技资质
-            ELT(FLOOR(RAND()*3)+1, 'A','B','C'),                -- 技术流评价
-            CAST(FLOOR(RAND()*100) AS CHAR),                    -- 科创分
-            CAST(FLOOR(RAND()*200) AS CHAR),                    -- 专利数量
-            CAST(FLOOR(RAND()*100) AS CHAR),                    -- 实用新型专利数
-            CAST(FLOOR(RAND()*80) AS CHAR),                    -- 发明专利数
-            CAST(FLOOR(RAND()*50) AS CHAR),                    -- 软件著作权数量
+            -- 所属行业：使用备注示例的层级格式（批发和零售业-零售业-综合零售-其他综合零售）
+            ELT(FLOOR(RAND()*8)+1,
+                '批发和零售业-零售业-综合零售-其他综合零售',
+                '制造业-计算机、通信和其他电子设备制造业-电子器件制造-半导体分立器件制造',
+                '信息传输、软件和信息技术服务业-软件和信息技术服务业-软件开发-应用软件开发',
+                '制造业-医药制造业-化学药品制剂制造-化学药品制剂制造',
+                '科学研究和技术服务业-研究和试验发展-工程和技术研究和试验发展',
+                '制造业-专用设备制造业-环保专用设备制造-大气污染防治设备制造',
+                '批发和零售业-批发业-机械设备批发-计算机及通讯设备批发',
+                '制造业-电气机械和器材制造业-电池制造-锂离子电池制造'),
+            -- 企业科技资质类型：参考备注"科技型中小企业 专精特新小巨人 创新型中小企业"
+            ELT(FLOOR(RAND()*8)+1,
+                '科技型中小企业',
+                '专精特新小巨人',
+                '创新型中小企业',
+                '国家高新技术企业',
+                '科技型中小企业 专精特新小巨人',
+                '国家高新技术企业 科技型中小企业',
+                '国家高新技术企业 创新型中小企业 专精特新小巨人',
+                ''),
+            -- 我行"技术流"评价结果：参考备注 T7 / -
+            IF(RAND() < 0.10, '-',
+                CONCAT('T', CAST(FLOOR(RAND() * 10) + 1 AS CHAR))),
+            v_kc_score,
+            v_entp_ptnt,           -- 企业专利数量
+            v_entp_ptnt_new,       -- 企业实用新型专利数
+            v_entp_ivt,            -- 企业发明专利数
+            v_clst5,               -- 企业软件著作权数量
             v_if_loan,
-            IF(v_if_loan = '是', ELT(FLOOR(RAND()*4)+1, '善新贷','科创贷','善营贷','小微贷'), NULL),  -- 贷款品种
-            IF(v_if_loan = '是', rand_amount(50, 5000), NULL),   -- 贷款金额（万元）
-            IF(v_if_loan = '是', CONCAT(FLOOR(RAND()*36)+6, '个月'), NULL),  -- 贷款期限
-            IF(v_if_loan = '是', rand_amount(0, 5000), NULL),    -- 贷款余额（万元）
-            rand_amount(10, 5000),                              -- 对公存款余额（万元）
-            rand_date_str(2025, 2026),                          -- 存款余额日期
-            rand_amount(5, 3000),                               -- 年日均余额（万元）
-            rand_date_str(2010, 2024),                          -- 开户时间
-            ELT(FLOOR(RAND()*2)+1, '基本账户','一般账户'),      -- 账户类型
-            CAST(FLOOR(RAND()*500)+1 AS CHAR),                  -- 代发人数
-            CAST(ROUND(RAND()*50000+5000, 2) AS CHAR),          -- 月均代发工资（元）
-            v_yuqi_flag,                                        -- 是否逾期
-            ELT(FLOOR(RAND()*2)+1, '否','是'),                  -- 是否司法纠纷
-            ELT(FLOOR(RAND()*2)+1, '否','是'),                  -- RAD 红色预警
-            NULL, NULL, NULL, NULL, NULL,                       -- 备用字段 1-5
-            NULL, NULL, NULL, NULL, NULL                        -- 备用字段 6-10
+            -- 最新贷款品种：备注重为"流动资金贷款"
+            IF(v_if_loan = '1',
+                ELT(FLOOR(RAND()*5)+1, '流动资金贷款','固定资产贷款','善新贷','科创贷','小微企业贷款'),
+                NULL),
+            -- 贷款金额（元）：参考备注 2200000.00
+            IF(v_if_loan = '1', rand_amount(500000, 10000000), NULL),
+            -- 贷款期限（月）：参考备注 36（纯数字，不带单位）
+            IF(v_if_loan = '1', CAST(FLOOR(RAND()*60) + 6 AS CHAR), NULL),
+            -- 贷款当前余额：结清后为 0
+            IF(v_if_loan = '1',
+                IF(RAND() < 0.15, '0', rand_amount(0, 8000000)),
+                NULL),
+            -- 对公存款余额：参考备注 6359.4
+            rand_amount(100, 500000),
+            -- 对公存款余额日期：ddMMMyyyy 格式，参考备注 24Apr2026
+            rand_date_str_dmy(2025, 2026),
+            -- 对公存款年日均余额：参考备注 318.13
+            rand_amount(50, 300000),
+            -- 开立账户时间：ddMMMyyyy 格式，参考备注 24Apr2024
+            rand_date_str_dmy(2010, 2024),
+            -- 对公账户类型：参考备注"基本户"
+            ELT(FLOOR(RAND()*2)+1, '基本户','一般户'),
+            -- 代发人数：参考备注 2
+            CAST(FLOOR(RAND()*50) + 1 AS CHAR),
+            -- 月均代发工资（元）：参考备注 15510
+            CAST(ROUND(RAND()*80000 + 3000, 2) AS CHAR),
+            v_yuqi_flag,                                                    -- 近两年逾期（0：否，1：是）
+            ELT(FLOOR(RAND()*2)+1, '0','1'),                                -- 司法纠纷（0：否，1：是）
+            ELT(FLOOR(RAND()*2)+1, '0','1'),                                -- RAD红色预警（0：否，1：是）
+            CONCAT('MGR', LPAD(FLOOR(RAND()*99999), 5, '0')),               -- 管户客户经理编号
+            CONCAT('BANK', LPAD(FLOOR(RAND()*999999), 6, '0')),             -- 管户支行编号
+            NULL, NULL, NULL, NULL, NULL,                                   -- 备用字段 1-5
+            NULL, NULL, NULL, NULL, NULL                                    -- 备用字段 6-10
         );
 
         SET i := i + 1;
@@ -225,6 +297,7 @@ CALL generate_random_profile(200);
 -- DROP FUNCTION IF EXISTS `rand_company_name`;
 -- DROP FUNCTION IF EXISTS `rand_amount`;
 -- DROP FUNCTION IF EXISTS `rand_date_str`;
+-- DROP FUNCTION IF EXISTS `rand_date_str_dmy`;
 -- DROP FUNCTION IF EXISTS `rand_address`;
 -- DROP FUNCTION IF EXISTS `rand_scope`;
 -- DROP PROCEDURE IF EXISTS `generate_random_profile`;

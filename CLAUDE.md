@@ -125,7 +125,7 @@ Controller base: `/sxd`
 | `application_att` | `id` (BIGINT AUTO_INCREMENT) | 附件元信息，`att_id` 唯一索引 |
 | `application_record` | `task_id` (VARCHAR(64)) | 申请记录，手工生成 `TASK-<32位hex>` |
 | `application_doc` | `doc_id` (VARCHAR(64)) | 文档明细，外部 API 返回的 ID |
-| `t101_sz_hjy_sxd_profile` | (无 PK，视图表) | 客户信息表，按 `cst_id` 查最新记录 |
+| `sxd_profile` | `cst_id` (VARCHAR(200)) | 客户信息表，以 `cst_id` 为主键 |
 
 详见 `docs/init-tables.sql`。
 

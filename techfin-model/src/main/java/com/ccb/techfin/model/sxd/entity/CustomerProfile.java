@@ -8,11 +8,11 @@ import lombok.Data;
 import java.time.LocalDate;
 
 /**
- * 客户信息表（善新贷材料生成结果表 / 视图）
- * 映射 t101_sz_hjy_sxd_profile，按 cst_id 查最新记录
+ * 客户信息表（善新贷材料生成结果表）
+ * 映射 sxd_profile，以 cst_id 为主键
  */
 @Data
-@TableName("t101_sz_hjy_sxd_profile")
+@TableName("sxd_profile")
 public class CustomerProfile {
 
     /** 客户编号（主键） */
