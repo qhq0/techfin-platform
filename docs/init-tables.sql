@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS application_record (
 CREATE TABLE IF NOT EXISTS application_doc (
     doc_id        VARCHAR(64)  NOT NULL                COMMENT '资料批量新增返回的文档 ID',
     task_id       VARCHAR(64)  NOT NULL                COMMENT '关联 application_record.task_id',
-    business_type VARCHAR(32)  DEFAULT NULL             COMMENT '业务类型（docTypeId 值），从 application_att 回填',
+    business_type VARCHAR(32)  DEFAULT NULL             COMMENT '业务类型（docTypeId 值），由 financeFiles/businessFile 分类从配置 api.doc-type.* 获取',
     report_date   VARCHAR(10)  DEFAULT NULL             COMMENT '财报报告日期（仅 finance 类型有值）',
     PRIMARY KEY (doc_id),
     KEY idx_task_id (task_id)

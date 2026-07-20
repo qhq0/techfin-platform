@@ -207,7 +207,7 @@ public class SxdServiceImpl implements SxdService {
             }
         }
         if (request.getBusinessFile() != null) {
-            allItems.add(new SubmitFileMeta(request.getBusinessFile().getAttId(), "business", null));
+            allItems.add(new SubmitFileMeta(request.getBusinessFile(), "business", null));
         }
         if (allItems.isEmpty()) {
             throw new BusinessException("NO_FILES", "请至少提供一个文件");

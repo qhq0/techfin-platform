@@ -22,8 +22,8 @@ public class SubmitMaterialsRequest {
     /** 财务报表文件列表（需携带 reportDate） */
     private List<SubmitFileItem> financeFiles;
 
-    /** 商业计划书（仅允许一份文件） */
-    private SubmitFileItem businessFile;
+    /** 商业计划书附件 ID（仅允许一份文件） */
+    private String businessFile;
 
     @Data
     @Builder
