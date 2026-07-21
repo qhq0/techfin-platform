@@ -30,13 +30,14 @@ CREATE TABLE IF NOT EXISTS sxd_att (
 --    提交资料时创建，主键为 task_id，无外键约束
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS sxd_record (
-    task_id     VARCHAR(64)  NOT NULL                COMMENT '任务 ID，格式 TASK-<32位hex>',
-    credit_code VARCHAR(18)  NOT NULL                COMMENT '统一社会信用代码',
-    cst_id      VARCHAR(64)  NOT NULL                COMMENT '客户编号',
-    status      VARCHAR(32)  NOT NULL DEFAULT 'UNFINISHED' COMMENT '任务状态：UNFINISHED（未完成）/ COMPLETED（已完成）',
+    task_id      VARCHAR(64)  NOT NULL                COMMENT '任务 ID，格式 TASK-<32位hex>',
+    credit_code  VARCHAR(18)  NOT NULL                COMMENT '统一社会信用代码',
+    cst_id       VARCHAR(64)  NOT NULL                COMMENT '客户编号',
+    status       VARCHAR(32)  NOT NULL DEFAULT 'UNFINISHED' COMMENT '任务状态：UNFINISHED（未完成）/ COMPLETED（已完成）',
     act_cntlr_nm VARCHAR(200) DEFAULT NULL             COMMENT '实际控制人姓名，用户确认后回填',
-    created_at  DATETIME     NOT NULL                COMMENT '创建时间',
-    updated_at  DATETIME     NOT NULL                COMMENT '更新时间',
+    has_ownership TINYINT(1)  DEFAULT NULL             COMMENT '是否有管户权：1-是，0-否',
+    created_at   DATETIME     NOT NULL                COMMENT '创建时间',
+    updated_at   DATETIME     NOT NULL                COMMENT '更新时间',
     PRIMARY KEY (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='申请记录表';
 
@@ -53,3 +54,19 @@ CREATE TABLE IF NOT EXISTS sxd_doc (
     PRIMARY KEY (doc_id),
     KEY idx_task_id (task_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='文档明细表';
+
+
+-- ------------------------------------------------------------
+-- 4. sxd_extract_data — 提取数据缓存表
+--    缓存外部 API 返回的提取文本，避免重复调用
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS sxd_extract_data (
+    id           BIGINT       NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+    task_id      VARCHAR(64)  NOT NULL                COMMENT '关联 sxd_record.task_id',
+    doc_id       VARCHAR(64)  NOT NULL                COMMENT '关联 sxd_doc.doc_id',
+    table_name   VARCHAR(128) NOT NULL                COMMENT '提取表名，如 dib_manage_company_profile',
+    text         MEDIUMTEXT   DEFAULT NULL             COMMENT '提取文本内容',
+    created_at   DATETIME     NOT NULL                COMMENT '创建时间',
+    updated_at   DATETIME     NOT NULL                COMMENT '更新时间',
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='提取数据缓存表';

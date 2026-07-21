@@ -2,12 +2,17 @@ package com.ccb.techfin.service.sxd.impl;
 
 import com.ccb.techfin.common.exception.BusinessException;
 import com.ccb.techfin.dao.sxd.CustomerProfileMapper;
+import com.ccb.techfin.dao.sxd.SxdMapper;
+import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
 import com.ccb.techfin.model.sxd.entity.CustomerProfile;
 import com.ccb.techfin.service.sxd.CustomerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
 
 @Slf4j
 @Service
@@ -15,6 +20,7 @@ import org.springframework.util.StringUtils;
 public class CustomerServiceImpl implements CustomerService {
 
     private final CustomerProfileMapper customerProfileMapper;
+    private final SxdMapper sxdMapper;
 
     @Override
     public String getControllerName(String cstId) {
@@ -51,6 +57,7 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean getCustOwnership(String taskId, String cstId, String userId) {
         if (!StringUtils.hasText(taskId)) {
             throw new BusinessException("PARAM_MISSING", "任务 ID 不能为空");
@@ -71,6 +78,18 @@ public class CustomerServiceImpl implements CustomerService {
                 profile.getCstMngaccCstmgrId(), profile.getCstMngaccInstSuprInsid(), userId);
 
         // TODO: 管户权判断逻辑待定，结合 userId、cstMngaccCstmgrId、cstMngaccInstSuprInsid 判断
-        return true;
+        boolean hasOwnership = true;
+
+        // 写入 sxd_record
+        ApplicationRecord record = sxdMapper.selectById(taskId);
+        if (record != null) {
+            record.setHasOwnership(hasOwnership);
+            record.setUpdatedAt(LocalDateTime.now());
+            sxdMapper.updateById(record);
+        } else {
+            log.warn("Task not found for ownership update: taskId={}", taskId);
+        }
+
+        return hasOwnership;
     }
 }

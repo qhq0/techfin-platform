@@ -7,6 +7,7 @@ import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
 import com.ccb.techfin.model.sxd.dto.response.ExtractDataResponse;
 import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
 import com.ccb.techfin.service.sxd.CustomerService;
+import com.ccb.techfin.service.sxd.ExtractDataService;
 import com.ccb.techfin.service.sxd.SxdService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
@@ -22,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class SxdController {
 
     private final SxdService sxdService;
+    private final ExtractDataService extractDataService;
     private final CustomerService customerService;
 
     /**
@@ -103,11 +105,11 @@ public class SxdController {
     /**
      * 查询商业计划书的提取数据。
      * 前端应在提取状态 completed=true 后调用此接口，获取各 section 的提取文本。
-     * 内部遍历预设的 tableName，调用外部提取数据查询 API 聚合结果。
+     * 先从缓存表读取，缓存未命中时调用外部 API 并写入缓存。
      */
-    @GetMapping("/extract-data/{task_id}")
+    @GetMapping("/extract-data/business/{task_id}")
     public CommonResp<ExtractDataResponse> queryExtractData(@PathVariable("task_id") String taskId) {
-        ExtractDataResponse result = sxdService.queryExtractData(taskId);
+        ExtractDataResponse result = extractDataService.queryExtractData(taskId);
         return CommonResp.success(result);
     }
 
@@ -117,7 +119,7 @@ public class SxdController {
      */
     @GetMapping("/export-data/business/{task_id}")
     public ResponseEntity<byte[]> exportBusinessData(@PathVariable("task_id") String taskId) {
-        byte[] data = sxdService.exportBusinessExtractData(taskId);
+        byte[] data = extractDataService.exportBusinessExtractData(taskId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
@@ -133,7 +135,7 @@ public class SxdController {
      */
     @GetMapping("/export-data/finance/{task_id}")
     public ResponseEntity<byte[]> exportFinanceData(@PathVariable("task_id") String taskId) {
-        byte[] data = sxdService.exportFinanceExtractData(taskId);
+        byte[] data = extractDataService.exportFinanceExtractData(taskId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))
                 .header(HttpHeaders.CONTENT_DISPOSITION,
@@ -142,11 +144,11 @@ public class SxdController {
     }
 
     /**
-     * 生成 Word 报告，包含企业基本信息、资产负债表关键科目和利润表关键科目。
+     * 生成 Word 报告，包含企业基本信息、商业计划书提取文本、资产负债表关键科目和利润表关键科目。
      */
     @PostMapping("/report")
     public ResponseEntity<byte[]> generateReport(@RequestBody ReportRequest request) {
-        byte[] data = sxdService.generateReport(request.getTaskId(), request.getCstId());
+        byte[] data = extractDataService.generateReport(request.getTaskId(), request.getCstId());
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
                         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
