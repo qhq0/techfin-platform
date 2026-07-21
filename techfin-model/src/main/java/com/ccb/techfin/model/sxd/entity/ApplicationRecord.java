@@ -29,9 +29,9 @@ public class ApplicationRecord {
     @TableField("act_cntlr_nm")
     private String actCntlrNm;
 
-    /** 是否有管户权：true-是，false-否 */
+    /** 是否有管户权：1-是，0-否 */
     @TableField("has_ownership")
-    private Boolean hasOwnership;
+    private String hasOwnership;
 
     @TableField("created_at")
     private LocalDateTime createdAt;

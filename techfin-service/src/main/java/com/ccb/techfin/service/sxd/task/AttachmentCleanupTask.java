@@ -3,10 +3,12 @@ package com.ccb.techfin.service.sxd.task;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.ccb.techfin.dao.sxd.AttachmentMapper;
 import com.ccb.techfin.dao.sxd.DocEntryMapper;
+import com.ccb.techfin.dao.sxd.ExtractDataMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
 import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
 import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
 import com.ccb.techfin.model.sxd.entity.DocEntry;
+import com.ccb.techfin.model.sxd.entity.ExtractData;
 import com.ccb.techfin.model.sxd.enums.TaskStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +24,7 @@ import java.util.stream.Collectors;
  * <ul>
  *   <li>每天凌晨 2:00 清理 sxd_att 中创建超过 24 小时的孤立记录</li>
  *   <li>每天凌晨 2:00 清理 sxd_doc 中关联状态为 UNFINISHED 的记录</li>
+ *   <li>每天凌晨 2:00 清理 sxd_extract_data 中关联状态为 UNFINISHED 的记录</li>
  * </ul>
  */
 @Slf4j
@@ -31,6 +34,7 @@ public class AttachmentCleanupTask {
 
     private final AttachmentMapper attachmentMapper;
     private final DocEntryMapper docEntryMapper;
+    private final ExtractDataMapper extractDataMapper;
     private final SxdMapper sxdMapper;
 
     /**
@@ -41,6 +45,7 @@ public class AttachmentCleanupTask {
         log.info("Scheduled cleanup task started");
         cleanupOrphanAttachments();
         cleanupUnfinishedDocEntries();
+        cleanupUnfinishedExtractData();
         log.info("Scheduled cleanup task completed");
     }
 
@@ -97,5 +102,36 @@ public class AttachmentCleanupTask {
             }
         }
         log.info("Cleaned up total {} doc entry(ies) for unfinished tasks", deleted);
+    }
+
+    /**
+     * 清理 sxd_extract_data 中关联任务状态为 UNFINISHED 的记录。
+     * 先查找所有 UNFINISHED 的 task_id，再批量删除对应的提取数据缓存记录。
+     */
+    private void cleanupUnfinishedExtractData() {
+        List<ApplicationRecord> unfinishedRecords = sxdMapper.selectList(
+                new LambdaQueryWrapper<ApplicationRecord>()
+                        .eq(ApplicationRecord::getStatus, TaskStatus.UNFINISHED));
+
+        if (unfinishedRecords.isEmpty()) {
+            log.debug("No unfinished tasks to clean up extract data");
+            return;
+        }
+
+        List<String> taskIds = unfinishedRecords.stream()
+                .map(ApplicationRecord::getTaskId)
+                .collect(Collectors.toList());
+
+        int deleted = 0;
+        for (String taskId : taskIds) {
+            int count = extractDataMapper.delete(
+                    new LambdaQueryWrapper<ExtractData>()
+                            .eq(ExtractData::getTaskId, taskId));
+            deleted += count;
+            if (count > 0) {
+                log.info("Cleaned up {} extract data record(s) for unfinished taskId={}", count, taskId);
+            }
+        }
+        log.info("Cleaned up total {} extract data record(s) for unfinished tasks", deleted);
     }
 }

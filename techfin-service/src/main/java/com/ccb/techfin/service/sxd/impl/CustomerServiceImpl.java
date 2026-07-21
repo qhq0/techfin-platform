@@ -78,7 +78,7 @@ public class CustomerServiceImpl implements CustomerService {
                 profile.getCstMngaccCstmgrId(), profile.getCstMngaccInstSuprInsid(), userId);
 
         // TODO: 管户权判断逻辑待定，结合 userId、cstMngaccCstmgrId、cstMngaccInstSuprInsid 判断
-        boolean hasOwnership = true;
+        String hasOwnership = "1";
 
         // 写入 sxd_record
         ApplicationRecord record = sxdMapper.selectById(taskId);
@@ -90,6 +90,6 @@ public class CustomerServiceImpl implements CustomerService {
             log.warn("Task not found for ownership update: taskId={}", taskId);
         }
 
-        return hasOwnership;
+        return "1".equals(hasOwnership);
     }
 }

@@ -31,11 +31,11 @@ CREATE TABLE IF NOT EXISTS sxd_att (
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS sxd_record (
     task_id      VARCHAR(64)  NOT NULL                COMMENT '任务 ID，格式 TASK-<32位hex>',
-    credit_code  VARCHAR(18)  NOT NULL                COMMENT '统一社会信用代码',
+    credit_code  VARCHAR(30)  NOT NULL                COMMENT '统一社会信用代码',
     cst_id       VARCHAR(64)  NOT NULL                COMMENT '客户编号',
-    status       VARCHAR(32)  NOT NULL DEFAULT 'UNFINISHED' COMMENT '任务状态：UNFINISHED（未完成）/ COMPLETED（已完成）',
+    status       VARCHAR(10)  NOT NULL DEFAULT '0'     COMMENT '任务状态：0-未完成 / 1-已完成',
     act_cntlr_nm VARCHAR(200) DEFAULT NULL             COMMENT '实际控制人姓名，用户确认后回填',
-    has_ownership TINYINT(1)  DEFAULT NULL             COMMENT '是否有管户权：1-是，0-否',
+    has_ownership VARCHAR(10)  DEFAULT NULL             COMMENT '是否有管户权：1-是，0-否',
     created_at   DATETIME     NOT NULL                COMMENT '创建时间',
     updated_at   DATETIME     NOT NULL                COMMENT '更新时间',
     PRIMARY KEY (task_id)
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS sxd_extract_data (
     task_id      VARCHAR(64)  NOT NULL                COMMENT '关联 sxd_record.task_id',
     doc_id       VARCHAR(64)  NOT NULL                COMMENT '关联 sxd_doc.doc_id',
     table_name   VARCHAR(128) NOT NULL                COMMENT '提取表名，如 dib_manage_company_profile',
-    text         MEDIUMTEXT   DEFAULT NULL             COMMENT '提取文本内容',
+    text         TEXT         DEFAULT NULL             COMMENT '提取文本内容',
     created_at   DATETIME     NOT NULL                COMMENT '创建时间',
     updated_at   DATETIME     NOT NULL                COMMENT '更新时间',
     PRIMARY KEY (id)

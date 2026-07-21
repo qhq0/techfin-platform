@@ -3,8 +3,8 @@ package com.ccb.techfin.model.sxd.enums;
 import com.baomidou.mybatisplus.annotation.IEnum;
 
 public enum TaskStatus implements IEnum<String> {
-    UNFINISHED("未完成"),
-    COMPLETED("已完成");
+    UNFINISHED("0"),
+    COMPLETED("1");
 
     private final String description;
 

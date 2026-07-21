@@ -539,9 +539,11 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             }
         }
 
-        // ============ 更新任务状态 + 清理文档记录 ============
+        // ============ 更新任务状态 + 清理文档记录和缓存 ============
         docEntryMapper.delete(new LambdaQueryWrapper<DocEntry>()
                 .eq(DocEntry::getTaskId, taskId));
+        extractDataMapper.delete(new LambdaQueryWrapper<ExtractData>()
+                .eq(ExtractData::getTaskId, taskId));
         record.setStatus(TaskStatus.COMPLETED);
         record.setUpdatedAt(LocalDateTime.now());
         sxdMapper.updateById(record);
@@ -551,7 +553,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
 
         // ============ 从 sxd_record 读取实控人姓名和管户权 ============
         String actCntlrNm = record.getActCntlrNm();
-        boolean hasOwnership = record.getHasOwnership() != null && record.getHasOwnership();
+        boolean hasOwnership = "1".equals(record.getHasOwnership());
 
         // ============ 生成 Word 文档 ============
         return createWordDocument(customerProfile, actCntlrNm, hasOwnership,
@@ -566,12 +568,13 @@ public class ExtractDataServiceImpl implements ExtractDataService {
         String url = apiProperties.getDocTableExtractStateUrl() + "/" + docId;
         try {
             HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
             if (StringUtils.hasText(token)) {
                 headers.set("c1-token", token);
             }
             HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
             ResponseEntity<ExternalResponse> response = restTemplate.exchange(
-                    url, HttpMethod.GET, requestEntity, ExternalResponse.class);
+                    url, HttpMethod.POST, requestEntity, ExternalResponse.class);
             ExternalResponse respBody = response.getBody();
             if (respBody == null || !respBody.isSuccess() || respBody.getData() == null) {
                 throw new BusinessException("TABLE_STATE_FAILED",
