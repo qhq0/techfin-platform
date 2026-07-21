@@ -16,19 +16,19 @@ public class GlobalExceptionHandler {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public CommonResp<Void> handleBusiness(BusinessException e) {
         log.warn("Business exception: code={}, message={}", e.getCode(), e.getMessage());
-        return CommonResp.error(-1, e.getMessage());
+        return CommonResp.fail(-1, e.getMessage());
     }
 
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public CommonResp<Void> handleMaxSize(MaxUploadSizeExceededException e) {
-        return CommonResp.error(-1, "文件大小超过限制");
+        return CommonResp.fail(-1, "文件大小超过限制");
     }
 
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public CommonResp<Void> handleUnknown(Exception e) {
         log.error("Unexpected error", e);
-        return CommonResp.error(-1, "系统繁忙，请稍后重试");
+        return CommonResp.fail(-1, "系统繁忙，请稍后重试");
     }
 }

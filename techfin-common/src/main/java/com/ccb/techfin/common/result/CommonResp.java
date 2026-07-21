@@ -33,7 +33,7 @@ public class CommonResp<T> {
                 .build();
     }
 
-    public static <T> CommonResp<T> error(int code, String msg) {
+    public static <T> CommonResp<T> fail(int code, String msg) {
         return CommonResp.<T>builder()
                 .code(code)
                 .msg(msg)

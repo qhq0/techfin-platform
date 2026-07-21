@@ -56,7 +56,7 @@ techfin-controller ──> techfin-service ──> techfin-dao ──> techfin-m
 ```java
 CommonResp.success(data);                    // code=0, msg="成功"
 CommonResp.success("操作成功", data);         // code=0
-CommonResp.error(-1, "错误信息");             // 业务异常
+CommonResp.fail(-1, "错误信息");             // 业务异常
 ```
 
 - `code=0` 成功，`code=-1` 错误（业务异常统一返回 -1，前端按 code 判断）
@@ -65,7 +65,7 @@ CommonResp.error(-1, "错误信息");             // 业务异常
 
 - **`BusinessException(code, message)`** — 业务层抛出，`GlobalExceptionHandler` 捕获返回 `400`。`code` 是 String 类型业务码（如 `PARAM_MISSING`、`ATTACH_NOT_FOUND`）
 - **`FileValidationException`** — 继承自 `BusinessException`，文件校验专用
-- 全局异常处理统一返回 `CommonResp.error(-1, e.getMessage())`
+- 全局异常处理统一返回 `CommonResp.fail(-1, e.getMessage())`
 
 ### 3. Jackson SNAKE_CASE
 

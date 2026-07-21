@@ -46,7 +46,7 @@ public class SxdController {
         if (deleted) {
             return CommonResp.success("附件删除成功", null);
         } else {
-            return CommonResp.error(1, "附件不存在或已删除");
+            return CommonResp.fail(1, "附件不存在或已删除");
         }
     }
 
