@@ -8,11 +8,15 @@ import lombok.Data;
 /**
  * 提取数据查询外部 API 的 data 数组中单条记录。
  * 不同 tableName 返回不同的文本字段，此处汇总所有可能字段。
+ *
+ * queryData 接口（POST /api/extract/open/doc/queryData）返回的 data 字段为 snake_case
+ * （如 company_profile_text、strategy_text），故显式标注 SnakeCaseStrategy 以匹配。
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ExtractQueryDataRecord {
+public class
+ExtractQueryDataRecord {
 
     /** dib_manage_company_profile */
     private String companyProfileText;

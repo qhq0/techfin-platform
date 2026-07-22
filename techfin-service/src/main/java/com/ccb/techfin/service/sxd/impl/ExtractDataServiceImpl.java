@@ -6,7 +6,7 @@ import com.ccb.techfin.dao.sxd.DocEntryMapper;
 import com.ccb.techfin.dao.sxd.ExtractDataMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
 import com.ccb.techfin.model.sxd.dto.external.*;
-import com.ccb.techfin.model.sxd.dto.response.ExtractDataResponse;
+import com.ccb.techfin.model.sxd.dto.response.ExtractDataItem;
 import com.ccb.techfin.model.sxd.entity.*;
 import com.ccb.techfin.model.sxd.enums.TaskStatus;
 import com.ccb.techfin.service.sxd.CustomerService;
@@ -164,7 +164,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             "dib_manage_y_industry_analysis", ExtractQueryDataRecord::getText
     );
 
-    public ExtractDataResponse queryExtractData(String taskId) {
+    public List<ExtractDataItem> queryExtractData(String taskId) {
         // 查商业计划书类型（businessType = docType.business 的值）的文档
         String businessDocType = String.valueOf(apiProperties.getDocType().get("business"));
         List<DocEntry> docEntries = docEntryMapper.selectList(
@@ -221,9 +221,9 @@ public class ExtractDataServiceImpl implements ExtractDataService {
     }
 
     /**
-     * 从缓存表记录构建 ExtractDataResponse，按 BUSINESS_PLAN_TABLES 顺序排列。
+     * 从缓存表记录构建响应列表，按 BUSINESS_PLAN_TABLES 顺序排列。
      */
-    private ExtractDataResponse buildResponseFromCache(List<ExtractData> cachedList) {
+    private List<ExtractDataItem> buildResponseFromCache(List<ExtractData> cachedList) {
         // 按 tableName 分组，同一 tableName 多条记录时换行合并
         Map<String, String> tableTextMap = new LinkedHashMap<>();
         for (String tableName : BUSINESS_PLAN_TABLES) {
@@ -234,12 +234,12 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                     (existing, incoming) -> existing.isEmpty() ? incoming : existing + "\n" + incoming);
         }
 
-        List<ExtractDataResponse.ExtractDataItem> extractData = new ArrayList<>();
+        List<ExtractDataItem> extractData = new ArrayList<>();
         for (String tableName : BUSINESS_PLAN_TABLES) {
             String text = tableTextMap.getOrDefault(tableName, "");
-            extractData.add(new ExtractDataResponse.ExtractDataItem(tableName, text));
+            extractData.add(new ExtractDataItem(tableName, text));
         }
-        return new ExtractDataResponse(extractData);
+        return extractData;
     }
 
     @Override

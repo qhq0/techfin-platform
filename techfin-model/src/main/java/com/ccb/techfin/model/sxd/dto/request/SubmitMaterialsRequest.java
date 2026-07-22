@@ -1,7 +1,5 @@
 package com.ccb.techfin.model.sxd.dto.request;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +8,6 @@ import lombok.NoArgsConstructor;
 import java.util.List;
 
 @Data
-@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 public class SubmitMaterialsRequest {
 
     /** 统一社会信用代码（18位数字或大写字母） */
@@ -29,7 +26,6 @@ public class SubmitMaterialsRequest {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
-    @JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
     public static class SubmitFileItem {
 
         /** 附件上传返回的 attId */

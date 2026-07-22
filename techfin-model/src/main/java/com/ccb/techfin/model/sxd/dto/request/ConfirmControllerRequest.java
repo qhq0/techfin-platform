@@ -1,11 +1,8 @@
 package com.ccb.techfin.model.sxd.dto.request;
 
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 @Data
-@JsonNaming(PropertyNamingStrategies.LowerCamelCaseStrategy.class)
 public class ConfirmControllerRequest {
 
     /** 任务 ID，对应 sxd_record.task_id */

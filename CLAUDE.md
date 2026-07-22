@@ -27,7 +27,7 @@ mvn compile -pl techfin-service -am
 | MyBatis-Plus | 3.5.16 (取代 JPA) |
 | MySQL | 8.0+ (InnoDB, utf8mb4) |
 | Lombok | 项目标配 |
-| Jackson | 全局 SNAKE_CASE |
+| Jackson | 默认 camelCase（仅 queryData 响应例外用 @JsonNaming(SnakeCaseStrategy.class)） |
 
 ## Module Dependency Chain
 
@@ -67,13 +67,13 @@ CommonResp.fail(-1, "错误信息");             // 业务异常
 - **`FileValidationException`** — 继承自 `BusinessException`，文件校验专用
 - 全局异常处理统一返回 `CommonResp.fail(-1, e.getMessage())`
 
-### 3. Jackson SNAKE_CASE
+### 3. Jackson 命名策略
 
-全局配置 `spring.jackson.property-naming-strategy=SNAKE_CASE`，导致：
+全局未配置 `spring.jackson.property-naming-strategy`，采用 Jackson 默认策略，**Java 字段名（camelCase）即 JSON 字段名**：
 
-- **请求体 DTO 必须显式覆盖**：用 `@JsonNaming(LowerCamelCaseStrategy.class)` 标注前端传 camelCase 字段的 DTO（如 `SubmitMaterialsRequest`、`SubmitFileItem`）
-- **外部 API 请求也必须覆盖**：对外部 API 发送的 DTO 需要 `@JsonNaming(LowerCamelCaseStrategy.class)`，否则会序列化为 snake_case 导致外部 API 不识别（如 `DocBatchAddItem`）
-- **响应自动转 snake_case**：Controller 返回的 `CommonResp` 中字段名会自动转换
+- **前端请求 / 对外请求 / 响应**：均使用 camelCase（如 `pendingDocNames`、`creditCode`、`docId`），无需额外标注
+- **外部 queryData 响应例外**：`POST /api/extract/open/doc/queryData` 返回的 `data` 字段为 snake_case（如 `company_profile_text`、`current_amount`、`item_standard`）。接收该响应的 DTO（`ExtractQueryDataRecord`、`BalanceSheetRecord`、`AuditReportItem`）必须显式标注 `@JsonNaming(SnakeCaseStrategy.class)` 以匹配
+- **MyBatis-Plus 映射不受影响**：实体类 DB 字段映射走 `@TableField` 注解，与 Jackson 命名策略独立
 
 ### 4. MyBatis-Plus 模式
 
@@ -125,9 +125,9 @@ Controller base: `/sxd`
 
 完整路径示例：
 - `POST /techfin/sxd/upload-attachment` — 上传附件
-- `DELETE /techfin/sxd/delete-attachment/{att_id}` — 删除附件
+- `DELETE /techfin/sxd/delete-attachment/{attId}` — 删除附件
 - `POST /techfin/sxd/submit-materials` — 提交资料
-- `GET /techfin/sxd/controller-name/{cst_id}` — 查询实控人
+- `GET /techfin/sxd/controller-name/{cstId}` — 查询实控人
 - `PUT /techfin/sxd/application-record/controller-name` — 确认实控人
 
 ## Database Tables

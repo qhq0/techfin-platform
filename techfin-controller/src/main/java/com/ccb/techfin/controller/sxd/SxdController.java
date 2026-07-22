@@ -4,7 +4,7 @@ import com.ccb.techfin.common.result.CommonResp;
 import com.ccb.techfin.model.sxd.dto.request.ConfirmControllerRequest;
 import com.ccb.techfin.model.sxd.dto.request.ReportRequest;
 import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
-import com.ccb.techfin.model.sxd.dto.response.ExtractDataResponse;
+import com.ccb.techfin.model.sxd.dto.response.ExtractDataItem;
 import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
 import com.ccb.techfin.service.sxd.CustomerService;
 import com.ccb.techfin.service.sxd.ExtractDataService;
@@ -16,6 +16,8 @@ import org.springframework.http.ResponseEntity;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/sxd")
@@ -40,8 +42,8 @@ public class SxdController {
     /**
      * 删除单个附件记录（从 sxd_att 表中删除）。
      */
-    @DeleteMapping("/delete-attachment/{att_id}")
-    public CommonResp<Void> deleteAttachment(@PathVariable("att_id") String attId) {
+    @DeleteMapping("/delete-attachment/{attId}")
+    public CommonResp<Void> deleteAttachment(@PathVariable("attId") String attId) {
         boolean deleted = sxdService.deleteAttachment(attId);
         if (deleted) {
             return CommonResp.success("附件删除成功", null);
@@ -63,8 +65,8 @@ public class SxdController {
     /**
      * 根据客户编号查询实控人姓名。
      */
-    @GetMapping("/controller-name/{cst_id}")
-    public CommonResp<String> getControllerName(@PathVariable("cst_id") String cstId) {
+    @GetMapping("/controller-name/{cstId}")
+    public CommonResp<String> getControllerName(@PathVariable("cstId") String cstId) {
         String name = customerService.getControllerName(cstId);
         return CommonResp.success(name);
     }
@@ -96,8 +98,8 @@ public class SxdController {
      * 遍历该任务下所有文档，调用外部资料详情接口获取提取状态。
      * 全部完成时返回 completed=true，否则返回 false 和待处理的文档名称。
      */
-    @GetMapping("/extract-status/{task_id}")
-    public CommonResp<ExtractStatusResponse> queryExtractStatus(@PathVariable("task_id") String taskId) {
+    @GetMapping("/extract-status/{taskId}")
+    public CommonResp<ExtractStatusResponse> queryExtractStatus(@PathVariable("taskId") String taskId) {
         ExtractStatusResponse result = sxdService.queryExtractStatus(taskId);
         return CommonResp.success(result);
     }
@@ -107,9 +109,9 @@ public class SxdController {
      * 前端应在提取状态 completed=true 后调用此接口，获取各 section 的提取文本。
      * 先从缓存表读取，缓存未命中时调用外部 API 并写入缓存。
      */
-    @GetMapping("/extract-data/business/{task_id}")
-    public CommonResp<ExtractDataResponse> queryExtractData(@PathVariable("task_id") String taskId) {
-        ExtractDataResponse result = extractDataService.queryExtractData(taskId);
+    @GetMapping("/extract-data/business/{taskId}")
+    public CommonResp<List<ExtractDataItem>> queryExtractData(@PathVariable("taskId") String taskId) {
+        List<ExtractDataItem> result = extractDataService.queryExtractData(taskId);
         return CommonResp.success(result);
     }
 
@@ -117,8 +119,8 @@ public class SxdController {
      * 导出商业计划书的提取结果 xlsx 文件。
      * 根据 taskId 查询 sxd_doc 中商业计划书类型的文档，调用外部导出资料接口直接返回文件流。
      */
-    @GetMapping("/export-data/business/{task_id}")
-    public ResponseEntity<byte[]> exportBusinessData(@PathVariable("task_id") String taskId) {
+    @GetMapping("/export-data/business/{taskId}")
+    public ResponseEntity<byte[]> exportBusinessData(@PathVariable("taskId") String taskId) {
         byte[] data = extractDataService.exportBusinessExtractData(taskId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(
@@ -133,8 +135,8 @@ public class SxdController {
      * 根据 taskId 查询 sxd_doc 中财务报表类型的文档列表，逐个调用外部导出资料接口，
      * 将所有 xlsx 打包为 zip 返回。
      */
-    @GetMapping("/export-data/finance/{task_id}")
-    public ResponseEntity<byte[]> exportFinanceData(@PathVariable("task_id") String taskId) {
+    @GetMapping("/export-data/finance/{taskId}")
+    public ResponseEntity<byte[]> exportFinanceData(@PathVariable("taskId") String taskId) {
         byte[] data = extractDataService.exportFinanceExtractData(taskId);
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/zip"))

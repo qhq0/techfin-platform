@@ -1,6 +1,8 @@
 package com.ccb.techfin.service.sxd;
 
-import com.ccb.techfin.model.sxd.dto.response.ExtractDataResponse;
+import com.ccb.techfin.model.sxd.dto.response.ExtractDataItem;
+
+import java.util.List;
 
 public interface ExtractDataService {
 
@@ -8,9 +10,9 @@ public interface ExtractDataService {
      * 查询商业计划书的提取数据。先从缓存表读取，缓存未命中时调用外部 API 并写入缓存。
      *
      * @param taskId 申请记录的任务 ID
-     * @return 提取数据（按 tableName 分组）
+     * @return 提取数据列表（按 tableName 分组）
      */
-    ExtractDataResponse queryExtractData(String taskId);
+    List<ExtractDataItem> queryExtractData(String taskId);
 
     /**
      * 导出商业计划书的提取结果 xlsx 文件。
