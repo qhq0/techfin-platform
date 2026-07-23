@@ -1,6 +1,6 @@
 package com.ccb.techfin.controller.sxd;
 
-import com.ccb.techfin.common.result.CommonResp;
+import com.ccb.techfin.common.result.Result;
 import com.ccb.techfin.model.sxd.dto.request.ConfirmControllerRequest;
 import com.ccb.techfin.model.sxd.dto.request.ReportRequest;
 import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
@@ -38,23 +38,23 @@ public class SxdController {
      * 上传单个附件文件到外部存储，同时将文件元信息记录到 sxd_att 表。
      */
     @PostMapping(value = "/upload-attachment", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public CommonResp<String> uploadAttachment(
+    public Result<String> uploadAttachment(
             @RequestParam("file") MultipartFile file) {
 
         String attId = sxdService.uploadFile(file);
-        return CommonResp.success("附件上传成功", attId);
+        return Result.success("附件上传成功", attId);
     }
 
     /**
      * 删除单个附件记录（从 sxd_att 表中删除）。
      */
     @DeleteMapping("/delete-attachment/{attId}")
-    public CommonResp<Void> deleteAttachment(@PathVariable("attId") String attId) {
+    public Result<Void> deleteAttachment(@PathVariable("attId") String attId) {
         boolean deleted = sxdService.deleteAttachment(attId);
         if (deleted) {
-            return CommonResp.success("附件删除成功", null);
+            return Result.success("附件删除成功", null);
         } else {
-            return CommonResp.fail(1, "附件不存在或已删除");
+            return Result.fail(1, "附件不存在或已删除");
         }
     }
 
@@ -63,30 +63,30 @@ public class SxdController {
      * 创建以 taskId 为主键的申请记录，批量新增文档。
      */
     @PostMapping("/submit-materials")
-    public CommonResp<String> submitMaterials(@RequestBody SubmitMaterialsRequest request) {
+    public Result<String> submitMaterials(@RequestBody SubmitMaterialsRequest request) {
         String taskId = sxdService.submitMaterials(request);
-        return CommonResp.success("资料提交成功", taskId);
+        return Result.success("资料提交成功", taskId);
     }
 
     /**
      * 根据客户编号查询实控人姓名。
      */
     @GetMapping("/controller-name/{cstId}")
-    public CommonResp<String> getControllerName(@PathVariable("cstId") String cstId) {
+    public Result<String> getControllerName(@PathVariable("cstId") String cstId) {
         String name = customerService.getControllerName(cstId);
-        return CommonResp.success(name);
+        return Result.success(name);
     }
 
     /**
      * 校验当前用户是否拥有该客户的管户权。
      */
     @PostMapping("/cust-ownership")
-    public CommonResp<Boolean> getCustOwnership(@RequestBody ReportRequest request,
+    public Result<Boolean> getCustOwnership(@RequestBody ReportRequest request,
                                                  HttpServletRequest servletRequest) {
         String userId = (String) servletRequest.getAttribute("userId");
         boolean hasOwnership = customerService.getCustOwnership(
                 request.getTaskId(), request.getCstId(), userId);
-        return CommonResp.success(hasOwnership);
+        return Result.success(hasOwnership);
     }
 
 
@@ -94,9 +94,9 @@ public class SxdController {
      * 确认/修改实际控制人姓名，回填到 sxd_record 表。
      */
     @PutMapping("/application-record/controller-name")
-    public CommonResp<Void> confirmControllerName(@RequestBody ConfirmControllerRequest request) {
+    public Result<Void> confirmControllerName(@RequestBody ConfirmControllerRequest request) {
         sxdService.confirmControllerName(request);
-        return CommonResp.success("实际控制人确认成功", null);
+        return Result.success("实际控制人确认成功", null);
     }
 
     /**
@@ -105,9 +105,9 @@ public class SxdController {
      * 全部完成时返回 completed=true，否则返回 false 和待处理的文档名称。
      */
     @GetMapping("/extract-status/{taskId}")
-    public CommonResp<ExtractStatusResponse> queryExtractStatus(@PathVariable("taskId") String taskId) {
+    public Result<ExtractStatusResponse> queryExtractStatus(@PathVariable("taskId") String taskId) {
         ExtractStatusResponse result = sxdService.queryExtractStatus(taskId);
-        return CommonResp.success(result);
+        return Result.success(result);
     }
 
     /**
@@ -116,9 +116,9 @@ public class SxdController {
      * 先从缓存表读取，缓存未命中时调用外部 API 并写入缓存。
      */
     @GetMapping("/extract-data/business/{taskId}")
-    public CommonResp<List<ExtractDataItem>> queryBusinessExtractData(@PathVariable("taskId") String taskId) {
+    public Result<List<ExtractDataItem>> queryBusinessExtractData(@PathVariable("taskId") String taskId) {
         List<ExtractDataItem> result = extractDataService.queryBusinessExtractData(taskId);
-        return CommonResp.success(result);
+        return Result.success(result);
     }
 
     /**
