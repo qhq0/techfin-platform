@@ -10,6 +10,9 @@ import java.util.List;
 /**
  * 统一的外部接口响应包装类。
  * 所有调用外部 API 的返回都使用此类，data 字段由调用方按需转换。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)

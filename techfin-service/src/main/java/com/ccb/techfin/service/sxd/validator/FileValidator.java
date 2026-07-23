@@ -31,7 +31,10 @@ public class FileValidator {
 
     /**
      * 校验文件（合并所有业务类型的扩展名，适用于单一上传接口）。
-     */
+     *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
     public void validate(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
             return;

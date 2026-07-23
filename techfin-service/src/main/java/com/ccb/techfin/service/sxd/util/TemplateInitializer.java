@@ -18,6 +18,9 @@ import java.util.List;
  *   <li>{@code {{利润表关键科目}}} — 替换为利润表表格</li>
  * </ul>
  * 用户可在此模板基础上调整格式、布局，只要保留占位符即可。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 public class TemplateInitializer {
 

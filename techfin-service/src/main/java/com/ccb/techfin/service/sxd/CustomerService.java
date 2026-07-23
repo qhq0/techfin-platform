@@ -4,6 +4,9 @@ import com.ccb.techfin.model.sxd.entity.CustomerProfile;
 
 /**
  * 客户信息查询服务
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 public interface CustomerService {
 

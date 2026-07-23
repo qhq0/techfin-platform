@@ -13,8 +13,8 @@ import com.ccb.techfin.model.sxd.dto.external.ExternalResponse;
 import com.ccb.techfin.model.sxd.dto.request.ConfirmControllerRequest;
 import com.ccb.techfin.model.sxd.dto.request.SubmitMaterialsRequest;
 import com.ccb.techfin.model.sxd.dto.response.ExtractStatusResponse;
-import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
-import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
+import com.ccb.techfin.model.sxd.entity.SxdAtt;
+import com.ccb.techfin.model.sxd.entity.SxdRecord;
 import com.ccb.techfin.model.sxd.entity.DocEntry;
 import com.ccb.techfin.service.sxd.SxdService;
 import com.ccb.techfin.service.sxd.config.ApiProperties;
@@ -32,11 +32,16 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 
+/**
+ * 善新贷业务服务实现：材料上传、提交、附件管理、实控人确认、提取状态轮询。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -57,11 +62,10 @@ public class SxdServiceImpl implements SxdService {
         String token = apiProperties.getDefaultToken();
         String attId = uploadAttachment(file, token);
 
-        ApplicationAttachment record = new ApplicationAttachment();
+        SxdAtt record = new SxdAtt();
         record.setAttId(attId);
         record.setFileName(file.getOriginalFilename());
         record.setFileSize(file.getSize());
-        record.setCreatedAt(LocalDateTime.now());
         attachmentMapper.insert(record);
 
         log.info("File uploaded: attId={}, fileName={}", attId, file.getOriginalFilename());
@@ -91,13 +95,10 @@ public class SxdServiceImpl implements SxdService {
         String token = apiProperties.getDefaultToken();
 
         // 创建申请记录（以 taskId 为主键）
-        LocalDateTime now = LocalDateTime.now();
-        ApplicationRecord record = new ApplicationRecord();
+        SxdRecord record = new SxdRecord();
         record.setTaskId(batchTaskId);
         record.setCreditCode(request.getCreditCode());
         record.setCstId(request.getCstId());
-        record.setCreatedAt(now);
-        record.setUpdatedAt(now);
         sxdMapper.insert(record);
 
         try {
@@ -128,8 +129,8 @@ public class SxdServiceImpl implements SxdService {
             // 提交成功后删除 sxd_att 中对应的附件记录
             for (SubmitFileMeta item : allItems) {
                 attachmentMapper.delete(
-                        new LambdaQueryWrapper<ApplicationAttachment>()
-                                .eq(ApplicationAttachment::getAttId, item.attId));
+                        new LambdaQueryWrapper<SxdAtt>()
+                                .eq(SxdAtt::getAttId, item.attId));
             }
 
             log.info("Application record submitted: taskId={}, creditCode={}, docCount={}",
@@ -199,7 +200,10 @@ public class SxdServiceImpl implements SxdService {
     /**
      * 根据请求中的文件项列表构建批量新增请求参数。
      * fileName/fileSize 从 sxd_att 表查询，docTypeId 根据 financeFiles/businessFile 分类从配置获取。
-     */
+     *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
     private List<DocBatchAddItem> buildBatchAddItems(List<SubmitFileMeta> items) {
         List<DocBatchAddItem> result = new ArrayList<>();
         Map<String, Long> docTypeMap = apiProperties.getDocType();
@@ -213,9 +217,9 @@ public class SxdServiceImpl implements SxdService {
                         "未知的业务类型：" + item.businessType);
             }
             // 从 sxd_att 查询文件元信息
-            ApplicationAttachment att = attachmentMapper.selectOne(
-                    new LambdaQueryWrapper<ApplicationAttachment>()
-                            .eq(ApplicationAttachment::getAttId, item.attId));
+            SxdAtt att = attachmentMapper.selectOne(
+                    new LambdaQueryWrapper<SxdAtt>()
+                            .eq(SxdAtt::getAttId, item.attId));
             if (att == null) {
                 throw new BusinessException("ATTACH_NOT_FOUND",
                         "附件 " + item.attId + " 不存在，请重新上传");
@@ -290,14 +294,13 @@ public class SxdServiceImpl implements SxdService {
             throw new BusinessException("PARAM_MISSING", "实际控制人姓名不能为空");
         }
 
-        ApplicationRecord record = sxdMapper.selectById(request.getTaskId());
+        SxdRecord record = sxdMapper.selectById(request.getTaskId());
         if (record == null) {
             throw new BusinessException("TASK_NOT_FOUND",
                     "任务 [" + request.getTaskId() + "] 不存在");
         }
 
         record.setActCntlrNm(request.getActCntlrNm());
-        record.setUpdatedAt(LocalDateTime.now());
         sxdMapper.updateById(record);
 
         log.info("Controller name confirmed: taskId={}, actCntlrNm={}",
@@ -311,8 +314,8 @@ public class SxdServiceImpl implements SxdService {
             return false;
         }
         int deleted = attachmentMapper.delete(
-                new LambdaQueryWrapper<ApplicationAttachment>()
-                        .eq(ApplicationAttachment::getAttId, attId));
+                new LambdaQueryWrapper<SxdAtt>()
+                        .eq(SxdAtt::getAttId, attId));
         boolean success = deleted > 0;
         if (success) {
             log.info("Attachment deleted: attId={}", attId);

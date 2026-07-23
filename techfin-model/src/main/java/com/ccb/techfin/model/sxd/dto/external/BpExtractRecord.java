@@ -6,23 +6,33 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import lombok.Data;
 
 /**
- * 提取数据查询外部 API 的 data 数组中单条记录。
+ * 商业计划书提取数据查询（POST /api/extract/open/doc/bpQueryData）的 data 数组中单条记录。
  * 不同 tableName 返回不同的文本字段，此处汇总所有可能字段。
  *
- * queryData 接口（POST /api/extract/open/doc/queryData）返回的 data 字段为 snake_case
- * （如 company_profile_text、strategy_text），故显式标注 SnakeCaseStrategy 以匹配。
+ * 该接口返回的 data 字段为 snake_case（如 company_profile_text、strategy_text），
+ * 故显式标注 SnakeCaseStrategy 以匹配。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class
-ExtractQueryDataRecord {
+
+BpExtractRecord {
 
     /** dib_manage_company_profile */
     private String companyProfileText;
 
-    /** dib_director_keyresume */
+    /** dib_director_keyresume — 人员简历 */
     private String resume;
+
+    /** dib_director_keyresume — 人员姓名 */
+    private String name;
+
+    /** dib_director_keyresume — 人员职位 */
+    private String position;
 
     /** dib_manage_business_and_products */
     private String businessAndProductsText;

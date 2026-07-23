@@ -2,6 +2,12 @@ package com.ccb.techfin.model.sxd.dto.request;
 
 import lombok.Data;
 
+/**
+ * 确认/修改实控人姓名请求体。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @Data
 public class ConfirmControllerRequest {
 

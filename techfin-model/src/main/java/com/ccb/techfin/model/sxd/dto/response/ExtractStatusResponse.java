@@ -8,6 +8,9 @@ import java.util.List;
 /**
  * 资料提取状态查询响应。
  * 前端通过 completed 判断是否全部完成，pendingDocNames 列出仍在处理中的文档名称。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @AllArgsConstructor

@@ -1,5 +1,6 @@
 package com.ccb.techfin.model.sxd.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -13,12 +14,15 @@ import java.time.LocalDateTime;
 /**
  * 附件上传记录，独立实体映射 sxd_att 表。
  * 上传时记录文件元信息，提交时根据 attId 查找匹配。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @TableName("sxd_att")
-public class ApplicationAttachment {
+public class SxdAtt {
 
     @TableId(type = IdType.AUTO)
     private Long id;
@@ -36,6 +40,6 @@ public class ApplicationAttachment {
     private Long fileSize;
 
     /** 创建时间，用于定时清理未关联的孤立附件 */
-    @TableField("created_at")
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 }

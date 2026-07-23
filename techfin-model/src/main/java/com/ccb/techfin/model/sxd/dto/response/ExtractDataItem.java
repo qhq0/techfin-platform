@@ -5,6 +5,9 @@ import lombok.Data;
 
 /**
  * 提取数据项，对应商业计划书某个 tableName 的提取文本。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @AllArgsConstructor

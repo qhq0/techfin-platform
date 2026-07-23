@@ -3,7 +3,7 @@ package com.ccb.techfin.service.sxd.impl;
 import com.ccb.techfin.common.exception.BusinessException;
 import com.ccb.techfin.dao.sxd.CustomerProfileMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
-import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
+import com.ccb.techfin.model.sxd.entity.SxdRecord;
 import com.ccb.techfin.model.sxd.entity.CustomerProfile;
 import com.ccb.techfin.service.sxd.CustomerService;
 import lombok.RequiredArgsConstructor;
@@ -12,8 +12,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
-
+/**
+ * 客户信息服务实现。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -53,7 +57,34 @@ public class CustomerServiceImpl implements CustomerService {
                     "客户编号 [" + cstId + "] 不存在");
         }
 
+        sanitizeProfile(profile);
+
         return profile;
+    }
+
+    /**
+     * 清洗 sxd_profile 中特定字段的占位值：
+     * tech_flow 的 "-" → ""，其余 5 个字段的 "-99" → ""。
+     */
+    private void sanitizeProfile(CustomerProfile profile) {
+        if ("-".equals(profile.getTechFlow())) {
+            profile.setTechFlow("");
+        }
+        if ("-99".equals(profile.getKcScore())) {
+            profile.setKcScore("");
+        }
+        if ("-99".equals(profile.getEntpPtntNum())) {
+            profile.setEntpPtntNum("");
+        }
+        if ("-99".equals(profile.getEntpPrctNewTpPtntNum())) {
+            profile.setEntpPrctNewTpPtntNum("");
+        }
+        if ("-99".equals(profile.getEntpIvtPtntNum())) {
+            profile.setEntpIvtPtntNum("");
+        }
+        if ("-99".equals(profile.getClst5YrInnRsWcoprNum())) {
+            profile.setClst5YrInnRsWcoprNum("");
+        }
     }
 
     @Override
@@ -81,10 +112,9 @@ public class CustomerServiceImpl implements CustomerService {
         String hasOwnership = "1";
 
         // 写入 sxd_record
-        ApplicationRecord record = sxdMapper.selectById(taskId);
+        SxdRecord record = sxdMapper.selectById(taskId);
         if (record != null) {
             record.setHasOwnership(hasOwnership);
-            record.setUpdatedAt(LocalDateTime.now());
             sxdMapper.updateById(record);
         } else {
             log.warn("Task not found for ownership update: taskId={}", taskId);

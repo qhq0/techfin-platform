@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS sxd_att (
     att_id        VARCHAR(64)  NOT NULL                COMMENT '附件上传返回的附件 ID',
     file_name     VARCHAR(255) DEFAULT NULL             COMMENT '上传时的原始文件名',
     file_size     BIGINT       DEFAULT NULL             COMMENT '文件大小（字节）',
-    created_at    DATETIME     DEFAULT NULL             COMMENT '创建时间，用于清理孤立附件',
+    created_at    DATETIME     NOT NULL                COMMENT '创建时间，用于清理孤立附件',
     PRIMARY KEY (id),
     UNIQUE KEY uk_att_id (att_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='附件元信息表';

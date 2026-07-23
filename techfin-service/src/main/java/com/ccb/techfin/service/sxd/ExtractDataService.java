@@ -4,6 +4,12 @@ import com.ccb.techfin.model.sxd.dto.response.ExtractDataItem;
 
 import java.util.List;
 
+/**
+ * 提取数据服务接口：要素提取、导出、报告生成。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 public interface ExtractDataService {
 
     /**
@@ -12,7 +18,7 @@ public interface ExtractDataService {
      * @param taskId 申请记录的任务 ID
      * @return 提取数据列表（按 tableName 分组）
      */
-    List<ExtractDataItem> queryExtractData(String taskId);
+    List<ExtractDataItem> queryBusinessExtractData(String taskId);
 
     /**
      * 导出商业计划书的提取结果 xlsx 文件。

@@ -5,15 +5,19 @@ import com.ccb.techfin.dao.sxd.AttachmentMapper;
 import com.ccb.techfin.dao.sxd.DocEntryMapper;
 import com.ccb.techfin.dao.sxd.ExtractDataMapper;
 import com.ccb.techfin.dao.sxd.SxdMapper;
-import com.ccb.techfin.model.sxd.entity.ApplicationAttachment;
-import com.ccb.techfin.model.sxd.entity.ApplicationRecord;
+import com.ccb.techfin.model.sxd.entity.SxdAtt;
+import com.ccb.techfin.model.sxd.entity.SxdRecord;
 import com.ccb.techfin.model.sxd.entity.DocEntry;
 import com.ccb.techfin.model.sxd.entity.ExtractData;
 import com.ccb.techfin.model.sxd.enums.TaskStatus;
+import com.ccb.techfin.service.sxd.config.ApiProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,9 +27,12 @@ import java.util.stream.Collectors;
  * 定时清理任务。
  * <ul>
  *   <li>每天凌晨 2:00 清理 sxd_att 中创建超过 24 小时的孤立记录</li>
- *   <li>每天凌晨 2:00 清理 sxd_doc 中关联状态为 UNFINISHED 的记录</li>
+ *   <li>每天凌晨 2:00 清理 sxd_doc 中关联状态为 UNFINISHED 的记录（含外部系统文件）</li>
  *   <li>每天凌晨 2:00 清理 sxd_extract_data 中关联状态为 UNFINISHED 的记录</li>
  * </ul>
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Slf4j
 @Component
@@ -36,6 +43,8 @@ public class AttachmentCleanupTask {
     private final DocEntryMapper docEntryMapper;
     private final ExtractDataMapper extractDataMapper;
     private final SxdMapper sxdMapper;
+    private final ApiProperties apiProperties;
+    private final RestTemplate restTemplate;
 
     /**
      * 每天凌晨 2:00 执行清理。
@@ -54,10 +63,10 @@ public class AttachmentCleanupTask {
      */
     private void cleanupOrphanAttachments() {
         LocalDateTime deadline = LocalDateTime.now().minusHours(24);
-        List<ApplicationAttachment> oldRecords = attachmentMapper.selectList(
-                new LambdaQueryWrapper<ApplicationAttachment>()
-                        .isNotNull(ApplicationAttachment::getCreatedAt)
-                        .lt(ApplicationAttachment::getCreatedAt, deadline));
+        List<SxdAtt> oldRecords = attachmentMapper.selectList(
+                new LambdaQueryWrapper<SxdAtt>()
+                        .isNotNull(SxdAtt::getCreatedAt)
+                        .lt(SxdAtt::getCreatedAt, deadline));
 
         if (oldRecords.isEmpty()) {
             log.debug("No orphan attachments to clean up");
@@ -65,22 +74,22 @@ public class AttachmentCleanupTask {
         }
 
         List<Long> ids = oldRecords.stream()
-                .map(ApplicationAttachment::getId)
+                .map(SxdAtt::getId)
                 .collect(Collectors.toList());
         int deleted = attachmentMapper.delete(
-                new LambdaQueryWrapper<ApplicationAttachment>()
-                        .in(ApplicationAttachment::getId, ids));
+                new LambdaQueryWrapper<SxdAtt>()
+                        .in(SxdAtt::getId, ids));
         log.info("Cleaned up {} orphan attachment(s) older than 24h", deleted);
     }
 
     /**
      * 清理 sxd_doc 中关联任务状态为 UNFINISHED 的记录。
-     * 先查找所有 UNFINISHED 的 task_id，再批量删除对应的文档记录。
+     * 先查找所有 UNFINISHED 的 task_id，删除外部系统中的文档，再删除本地记录。
      */
     private void cleanupUnfinishedDocEntries() {
-        List<ApplicationRecord> unfinishedRecords = sxdMapper.selectList(
-                new LambdaQueryWrapper<ApplicationRecord>()
-                        .eq(ApplicationRecord::getStatus, TaskStatus.UNFINISHED));
+        List<SxdRecord> unfinishedRecords = sxdMapper.selectList(
+                new LambdaQueryWrapper<SxdRecord>()
+                        .eq(SxdRecord::getStatus, TaskStatus.UNFINISHED));
 
         if (unfinishedRecords.isEmpty()) {
             log.debug("No unfinished tasks to clean up doc entries");
@@ -88,11 +97,23 @@ public class AttachmentCleanupTask {
         }
 
         List<String> taskIds = unfinishedRecords.stream()
-                .map(ApplicationRecord::getTaskId)
+                .map(SxdRecord::getTaskId)
                 .collect(Collectors.toList());
 
         int deleted = 0;
         for (String taskId : taskIds) {
+            List<DocEntry> entries = docEntryMapper.selectList(
+                    new LambdaQueryWrapper<DocEntry>()
+                            .eq(DocEntry::getTaskId, taskId));
+            // 先删除外部系统中的文档
+            for (DocEntry entry : entries) {
+                try {
+                    deleteExternalDoc(entry.getDocId());
+                } catch (Exception e) {
+                    log.warn("Failed to delete external doc {} for taskId={}: {}",
+                            entry.getDocId(), taskId, e.getMessage());
+                }
+            }
             int count = docEntryMapper.delete(
                     new LambdaQueryWrapper<DocEntry>()
                             .eq(DocEntry::getTaskId, taskId));
@@ -105,13 +126,29 @@ public class AttachmentCleanupTask {
     }
 
     /**
+     * 调用外部 API 删除单个文档。
+     */
+    private void deleteExternalDoc(String docId) {
+        String url = apiProperties.getDocDeleteUrl() + "/" + docId;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        String token = apiProperties.getDefaultToken();
+        if (StringUtils.hasText(token)) {
+            headers.set("c1-token", token);
+        }
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+        restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
+        log.info("Deleted external doc: docId={}", docId);
+    }
+
+    /**
      * 清理 sxd_extract_data 中关联任务状态为 UNFINISHED 的记录。
      * 先查找所有 UNFINISHED 的 task_id，再批量删除对应的提取数据缓存记录。
      */
     private void cleanupUnfinishedExtractData() {
-        List<ApplicationRecord> unfinishedRecords = sxdMapper.selectList(
-                new LambdaQueryWrapper<ApplicationRecord>()
-                        .eq(ApplicationRecord::getStatus, TaskStatus.UNFINISHED));
+        List<SxdRecord> unfinishedRecords = sxdMapper.selectList(
+                new LambdaQueryWrapper<SxdRecord>()
+                        .eq(SxdRecord::getStatus, TaskStatus.UNFINISHED));
 
         if (unfinishedRecords.isEmpty()) {
             log.debug("No unfinished tasks to clean up extract data");
@@ -119,7 +156,7 @@ public class AttachmentCleanupTask {
         }
 
         List<String> taskIds = unfinishedRecords.stream()
-                .map(ApplicationRecord::getTaskId)
+                .map(SxdRecord::getTaskId)
                 .collect(Collectors.toList());
 
         int deleted = 0;

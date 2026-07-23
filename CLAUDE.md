@@ -72,16 +72,17 @@ CommonResp.fail(-1, "错误信息");             // 业务异常
 全局未配置 `spring.jackson.property-naming-strategy`，采用 Jackson 默认策略，**Java 字段名（camelCase）即 JSON 字段名**：
 
 - **前端请求 / 对外请求 / 响应**：均使用 camelCase（如 `pendingDocNames`、`creditCode`、`docId`），无需额外标注
-- **外部 queryData 响应例外**：`POST /api/extract/open/doc/queryData` 返回的 `data` 字段为 snake_case（如 `company_profile_text`、`current_amount`、`item_standard`）。接收该响应的 DTO（`ExtractQueryDataRecord`、`BalanceSheetRecord`、`AuditReportItem`）必须显式标注 `@JsonNaming(SnakeCaseStrategy.class)` 以匹配
+- **外部 queryData 响应例外**：`POST /api/extract/open/doc/queryData` 返回的 `data` 字段为 snake_case（如 `company_profile_text`、`current_amount`、`item_standard`）。接收该响应的 DTO（`BpExtractRecord`、`FinanceRecord`、`AuditReportItem`）必须显式标注 `@JsonNaming(SnakeCaseStrategy.class)` 以匹配
 - **MyBatis-Plus 映射不受影响**：实体类 DB 字段映射走 `@TableField` 注解，与 Jackson 命名策略独立
 
 ### 4. MyBatis-Plus 模式
 
 - 实体类用 `@TableName`、`@TableId`、`@TableField` 注解
 - `@TableId(type = IdType.AUTO)` 自增主键，`@TableId(type = IdType.INPUT)` 手工赋值主键
-- 枚举实现 `IEnum<String>`，`getValue()` 返回 `name()`，数据库存枚举常量名（如 `TaskStatus.PENDING_ANALYSIS` → `"PENDING_ANALYSIS"`）
+- `@TableField(fill = FieldFill.INSERT)` / `FieldFill.INSERT_UPDATE` 配合 `MyMetaObjectHandler` 实现 `createdAt` / `updatedAt` 自动填充，无需在业务代码中手动 set 时间
+- 枚举实现 `IEnum<String>`，`getValue()` 返回 `name()`，数据库存枚举常量名（如 `TaskStatus.UNFINISHED` → `"0"`）
 - Mapper 接口 `@Mapper` + `extends BaseMapper<T>`，无自定义方法时为空接口
-- 动态查询用 `LambdaQueryWrapper<T>`（如 `new LambdaQueryWrapper<ApplicationAttachment>().eq(...)`）
+- 动态查询用 `LambdaQueryWrapper<T>`（如 `new LambdaQueryWrapper<SxdAtt>().eq(...)`）
 - 删除用 `mapper.delete(new LambdaQueryWrapper<>()...eq(...))`
 - 无需 `@EntityScan`/`@MapperScan`，`@SpringBootApplication(scanBasePackages = "com.ccb.techfin")` 扫描所有模块
 
@@ -137,6 +138,7 @@ Controller base: `/sxd`
 | `sxd_att` | `id` (BIGINT AUTO_INCREMENT) | 附件元信息，`att_id` 唯一索引 |
 | `sxd_record` | `task_id` (VARCHAR(64)) | 申请记录，手工生成 `TASK-<32位hex>` |
 | `sxd_doc` | `doc_id` (VARCHAR(64)) | 文档明细，外部 API 返回的 ID |
+| `sxd_extract_data` | `id` (BIGINT AUTO_INCREMENT) | 提取数据缓存表 |
 | `sxd_profile` | `cst_id` (VARCHAR(200)) | 客户信息表，以 `cst_id` 为主键 |
 
 详见 `docs/init-tables.sql`。

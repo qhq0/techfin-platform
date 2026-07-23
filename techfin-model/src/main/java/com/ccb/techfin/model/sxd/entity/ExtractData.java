@@ -1,5 +1,6 @@
 package com.ccb.techfin.model.sxd.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -12,6 +13,9 @@ import java.time.LocalDateTime;
 
 /**
  * 提取数据缓存实体，映射 sxd_extract_data 表。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @NoArgsConstructor
@@ -40,10 +44,10 @@ public class ExtractData {
     private String text;
 
     /** 创建时间 */
-    @TableField("created_at")
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
     /** 更新时间 */
-    @TableField("updated_at")
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

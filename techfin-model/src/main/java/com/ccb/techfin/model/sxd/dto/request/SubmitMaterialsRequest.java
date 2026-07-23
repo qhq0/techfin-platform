@@ -7,6 +7,12 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+/**
+ * 提交资料请求体。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @Data
 public class SubmitMaterialsRequest {
 

@@ -7,6 +7,9 @@ import lombok.NoArgsConstructor;
 
 /**
  * 资料批量新增请求参数。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @Builder

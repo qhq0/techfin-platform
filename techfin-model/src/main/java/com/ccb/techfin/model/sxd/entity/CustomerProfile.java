@@ -10,6 +10,9 @@ import java.time.LocalDate;
 /**
  * 客户信息表（善新贷材料生成结果表）
  * 映射 sxd_profile，以 cst_id 为主键
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @TableName("sxd_profile")

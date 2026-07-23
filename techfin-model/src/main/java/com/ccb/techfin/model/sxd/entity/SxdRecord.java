@@ -1,5 +1,6 @@
 package com.ccb.techfin.model.sxd.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -9,9 +10,15 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 申请记录实体，映射 sxd_record 表。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @Data
 @TableName("sxd_record")
-public class ApplicationRecord {
+public class SxdRecord {
 
     @TableId(value = "task_id", type = IdType.INPUT)
     private String taskId;
@@ -33,9 +40,9 @@ public class ApplicationRecord {
     @TableField("has_ownership")
     private String hasOwnership;
 
-    @TableField("created_at")
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;
 
-    @TableField("updated_at")
+    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 }

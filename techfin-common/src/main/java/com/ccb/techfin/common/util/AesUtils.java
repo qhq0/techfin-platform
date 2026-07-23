@@ -9,6 +9,9 @@ import java.util.Base64;
  * AES 加解密工具类。
  * 用于解密前端请求头 Authorization: Bearer <encrypted-token>。
  * token 明文格式：8 位用户编号 + key。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 public final class AesUtils {
 

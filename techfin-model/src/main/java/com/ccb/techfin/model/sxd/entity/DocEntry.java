@@ -9,6 +9,9 @@ import lombok.NoArgsConstructor;
 
 /**
  * 批量新增后返回的文档信息，独立实体映射 sxd_doc 表。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @NoArgsConstructor

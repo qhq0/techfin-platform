@@ -8,25 +8,23 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 /**
- * 资产负债表提取数据查询（queryData）的 data 数组中单条记录。
- * 对应外部 API 返回的资产负债表科目数据项。
+ * 财务报表提取数据查询（queryData）的 data 数组中单条记录。
+ * 同时用于资产负债表和利润表（两者返回结构一致，仅 tableName 参数不同）。
  *
- * queryData 接口（POST /api/extract/open/doc/queryData）返回的 data 字段为 snake_case
+ * queryData 接口（POST /api/extract/open/do
+ * c/queryData）返回的 data 字段为 snake_case
  * （如 item_standard、current_amount、report_date），故显式标注 SnakeCaseStrategy 以匹配。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class BalanceSheetRecord {
+public class FinanceRecord {
 
-    /** 标准科目名称，如 营业总收入、营业成本（用于模糊匹配） */
+    /** 标准科目名称，如 营业总收入、营业成本（用于精确匹配） */
     private String itemStandard;
-
-    /** 科目编码，如 B1100101BB */
-    private String itemCode;
-
-    /** 备注 */
-    private String note;
 
     /** 科目名称，如 货币资金 */
     private String item;
@@ -39,10 +37,4 @@ public class BalanceSheetRecord {
 
     /** 报表日期，如 2025-06-30 */
     private String reportDate;
-
-    /** 币种单位 */
-    private String unit;
-
-    /** 文档 ID */
-    private String docId;
 }

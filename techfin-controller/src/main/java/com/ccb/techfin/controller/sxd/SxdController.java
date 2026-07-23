@@ -19,6 +19,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+/**
+ * 善新贷业务 Controller。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @RestController
 @RequestMapping("/sxd")
 @RequiredArgsConstructor
@@ -110,8 +116,8 @@ public class SxdController {
      * 先从缓存表读取，缓存未命中时调用外部 API 并写入缓存。
      */
     @GetMapping("/extract-data/business/{taskId}")
-    public CommonResp<List<ExtractDataItem>> queryExtractData(@PathVariable("taskId") String taskId) {
-        List<ExtractDataItem> result = extractDataService.queryExtractData(taskId);
+    public CommonResp<List<ExtractDataItem>> queryBusinessExtractData(@PathVariable("taskId") String taskId) {
+        List<ExtractDataItem> result = extractDataService.queryBusinessExtractData(taskId);
         return CommonResp.success(result);
     }
 

@@ -11,6 +11,9 @@ import lombok.Data;
  *
  * queryData 接口返回的 data 字段为 snake_case（如 item_value、report_date），
  * 故显式标注 SnakeCaseStrategy 以匹配。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Data
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
@@ -22,10 +25,4 @@ public class AuditReportItem {
 
     /** 项目值，如 财务报表口径 → "1"(单一) / "2"(合并) */
     private String itemValue;
-
-    /** 报表日期 */
-    private String reportDate;
-
-    /** 文档 ID */
-    private String docId;
 }

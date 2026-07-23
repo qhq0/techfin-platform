@@ -29,7 +29,6 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -37,6 +36,12 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * 提取数据服务实现：要素提取、导出、报告生成。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -152,19 +157,35 @@ public class ExtractDataServiceImpl implements ExtractDataService {
     private static final BigDecimal TEN_THOUSAND = new BigDecimal("10000");
 
     /** 每个 tableName 对应的文本提取函数 */
-    private static final Map<String, Function<ExtractQueryDataRecord, String>> TEXT_EXTRACTORS = Map.of(
-            "dib_manage_company_profile", ExtractQueryDataRecord::getCompanyProfileText,
-            "dib_director_keyresume", ExtractQueryDataRecord::getResume,
-            "dib_manage_business_and_products", ExtractQueryDataRecord::getBusinessAndProductsText,
-            "dib_manage_business_circumstance", ExtractQueryDataRecord::getText,
-            "dib_company_qualification", ExtractQueryDataRecord::getText,
-            "dib_manage_progressiveness_description", ExtractQueryDataRecord::getProgressivenessText,
-            "dib_manage_competitive_advantages", ExtractQueryDataRecord::getCompetitivenessText,
-            "dib_manage_development_strategy", ExtractQueryDataRecord::getStrategyText,
-            "dib_manage_y_industry_analysis", ExtractQueryDataRecord::getText
+    private static final Map<String, Function<BpExtractRecord, String>> TEXT_EXTRACTORS = Map.of(
+            "dib_manage_company_profile", BpExtractRecord::getCompanyProfileText,
+            "dib_director_keyresume", r -> formatDirectorResume(r),
+            "dib_manage_business_and_products", BpExtractRecord::getBusinessAndProductsText,
+            "dib_manage_business_circumstance", BpExtractRecord::getText,
+            "dib_company_qualification", BpExtractRecord::getText,
+            "dib_manage_progressiveness_description", BpExtractRecord::getProgressivenessText,
+            "dib_manage_competitive_advantages", BpExtractRecord::getCompetitivenessText,
+            "dib_manage_development_strategy", BpExtractRecord::getStrategyText,
+            "dib_manage_y_industry_analysis", BpExtractRecord::getText
     );
 
-    public List<ExtractDataItem> queryExtractData(String taskId) {
+    /**
+     * 格式化人员简历文本。
+     * 格式：职位：position，简介：resume
+     */
+    private static String formatDirectorResume(BpExtractRecord r) {
+        StringBuilder sb = new StringBuilder();
+        if (r.getPosition() != null && !r.getPosition().isEmpty()) {
+            sb.append("职位：").append(r.getPosition());
+        }
+        if (r.getResume() != null && !r.getResume().isEmpty()) {
+            if (sb.length() > 0) sb.append("，");
+            sb.append("简介：").append(r.getResume());
+        }
+        return sb.toString();
+    }
+
+    public List<ExtractDataItem> queryBusinessExtractData(String taskId) {
         // 查商业计划书类型（businessType = docType.business 的值）的文档
         String businessDocType = String.valueOf(apiProperties.getDocType().get("business"));
         List<DocEntry> docEntries = docEntryMapper.selectList(
@@ -187,7 +208,6 @@ public class ExtractDataServiceImpl implements ExtractDataService {
 
         // 缓存未命中，调外部 API 并写入缓存
         String token = apiProperties.getDefaultToken();
-        LocalDateTime now = LocalDateTime.now();
 
         for (DocEntry entry : docEntries) {
             Long docId;
@@ -200,15 +220,13 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             }
 
             for (String tableName : BUSINESS_PLAN_TABLES) {
-                List<String> texts = queryExtractDataByTable(docId, tableName, token);
+                List<String> texts = queryBusinessExtractDataByTable(docId, tableName, token);
                 String mergedText = String.join("\n", texts);
                 ExtractData extractData = new ExtractData();
                 extractData.setTaskId(taskId);
                 extractData.setDocId(entry.getDocId());
                 extractData.setTableName(tableName);
                 extractData.setText(mergedText);
-                extractData.setCreatedAt(now);
-                extractData.setUpdatedAt(now);
                 extractDataMapper.insert(extractData);
             }
         }
@@ -276,7 +294,13 @@ public class ExtractDataServiceImpl implements ExtractDataService {
         Map<String, Integer> dateCounter = new HashMap<>();
         List<AbstractMap.SimpleEntry<String, byte[]>> fileEntries = new ArrayList<>();
         for (DocEntry entry : entries) {
-            byte[] data = downloadExportFile(entry.getDocId());
+            byte[] data;
+            try {
+                data = downloadExportFile(entry.getDocId());
+            } catch (BusinessException e) {
+                log.warn("Failed to download export file for docId={}, skipping: {}", entry.getDocId(), e.getMessage());
+                continue;
+            }
             // 处理空日期和重复日期
             String baseName = entry.getReportDate() != null && !entry.getReportDate().isEmpty()
                     ? entry.getReportDate() : "未知日期";
@@ -285,6 +309,11 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                     ? "财务报表_" + baseName + ".xlsx"
                     : "财务报表_" + baseName + "_" + count + ".xlsx";
             fileEntries.add(new AbstractMap.SimpleEntry<>(fileName, data));
+        }
+
+        if (fileEntries.isEmpty()) {
+            throw new BusinessException("DOC_EXPORT_FAILED",
+                    "任务 [" + taskId + "] 下所有财务报表导出均失败");
         }
 
         return createFinanceZip(fileEntries);
@@ -347,8 +376,8 @@ public class ExtractDataServiceImpl implements ExtractDataService {
     /**
      * 调用外部提取数据查询 API，返回该 tableName 下的文本列表。
      */
-    private List<String> queryExtractDataByTable(Long docId, String tableName, String token) {
-        ExtractQueryDataRequest request = new ExtractQueryDataRequest(docId, tableName);
+    private List<String> queryBusinessExtractDataByTable(Long docId, String tableName, String token) {
+        BpExtractRequest request = new BpExtractRequest(docId, tableName);
 
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -357,7 +386,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                 headers.set("c1-token", token);
             }
 
-            HttpEntity<ExtractQueryDataRequest> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<BpExtractRequest> requestEntity = new HttpEntity<>(request, headers);
             ResponseEntity<ExternalResponse> response = restTemplate.exchange(
                     apiProperties.getDocQueryDataUrl(),
                     HttpMethod.POST,
@@ -365,21 +394,18 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                     ExternalResponse.class);
 
             ExternalResponse respBody = response.getBody();
-            if (respBody == null) {
-                throw new BusinessException("DOC_QUERY_FAILED",
-                        "提取数据查询失败：未知错误");
-            }
-            if (!respBody.isSuccess() || respBody.getData() == null) {
-                throw new BusinessException("DOC_QUERY_FAILED",
-                        "提取数据查询失败：" + respBody.getMessage());
+            if (respBody == null || !respBody.isSuccess() || respBody.getData() == null) {
+                log.warn("Query extract data returned empty for docId={}, tableName={}: {}",
+                        docId, tableName, respBody != null ? respBody.getMessage() : "null");
+                return Collections.emptyList();
             }
 
-            List<ExtractQueryDataRecord> records = respBody.getDataAsList(ExtractQueryDataRecord.class);
+            List<BpExtractRecord> records = respBody.getDataAsList(BpExtractRecord.class);
             if (records == null || records.isEmpty()) {
                 return Collections.emptyList();
             }
 
-            Function<ExtractQueryDataRecord, String> extractor = TEXT_EXTRACTORS.get(tableName);
+            Function<BpExtractRecord, String> extractor = TEXT_EXTRACTORS.get(tableName);
             if (extractor == null) {
                 log.warn("No text extractor for tableName: {}", tableName);
                 return Collections.emptyList();
@@ -394,15 +420,14 @@ public class ExtractDataServiceImpl implements ExtractDataService {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to query extract data for docId={}, tableName={}", docId, tableName, e);
-            throw new BusinessException("DOC_QUERY_FAILED",
-                    "提取数据查询异常：" + e.getMessage());
+            log.warn("Failed to query extract data for docId={}, tableName={}: {}", docId, tableName, e.getMessage());
+            return Collections.emptyList();
         }
     }
 
     public byte[] generateReport(String taskId, String cstId) {
         // ============ 校验任务存在 ============
-        ApplicationRecord record = sxdMapper.selectById(taskId);
+        SxdRecord record = sxdMapper.selectById(taskId);
         if (record == null) {
             throw new BusinessException("TASK_NOT_FOUND",
                     "任务 [" + taskId + "] 不存在");
@@ -431,64 +456,9 @@ public class ExtractDataServiceImpl implements ExtractDataService {
 
         String token = apiProperties.getDefaultToken();
 
-        // ============ 资产负债表处理 ============
+        // ============ 资产负债表 + 利润表处理（合并单次循环） ============
         Map<String, Map<String, BigDecimal>> bsItemDateValues = new LinkedHashMap<>();
         List<String> bsDateColumns = new ArrayList<>();
-
-        for (DocEntry entry : entries) {
-            Long docId;
-            try {
-                docId = Long.parseLong(entry.getDocId());
-            } catch (NumberFormatException e) {
-                log.warn("Invalid docId format, skipping: {}", entry.getDocId());
-                continue;
-            }
-
-            String tableName;
-            List<BalanceSheetRecord> records;
-            try {
-                tableName = determineBalanceSheetTable(docId, token);
-                records = queryBalanceSheetData(docId, tableName, token);
-            } catch (BusinessException e) {
-                log.warn("Query failed for docId={} balance sheet: {}, outputting empty column", docId, e.getMessage());
-                records = null;
-            }
-            if (records == null || records.isEmpty()) {
-                log.warn("No balance sheet data for docId={}, outputting empty column", docId);
-            }
-
-            String reportDate = (records != null && !records.isEmpty()) ? extractReportDateFromRecords(records) : null;
-            if (reportDate == null || reportDate.isEmpty()) {
-                reportDate = entry.getReportDate();
-            }
-            if (reportDate == null || reportDate.isEmpty()) {
-                log.warn("No report date for docId={}, skipping", docId);
-                continue;
-            }
-
-            String dateCol = formatDateColumn(reportDate);
-            if (!bsDateColumns.contains(dateCol)) {
-                bsDateColumns.add(dateCol);
-            }
-
-            if (records != null) {
-                for (BalanceSheetRecord r : records) {
-                    String itemName = r.getItem();
-                    if (itemName != null && BALANCE_SHEET_KEY_ITEMS.contains(itemName)
-                            && r.getCurrentAmount() != null) {
-                        bsItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
-                                .put(dateCol, r.getCurrentAmount());
-                    }
-                }
-            }
-        }
-
-        if (bsDateColumns.isEmpty()) {
-            throw new BusinessException("NO_BALANCE_SHEET_DATA",
-                    "任务 [" + taskId + "] 下未找到有效的资产负债表数据");
-        }
-
-        // ============ 利润表处理 ============
         Map<String, Map<String, BigDecimal>> psItemDateValues = new LinkedHashMap<>();
         List<String> psDateColumns = new ArrayList<>();
 
@@ -501,43 +471,101 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                 continue;
             }
 
-            String tableName;
-            List<BalanceSheetRecord> records;
+            // 一次查询表格提取状态，同时确定资产负债表和利润表的表类型
+            List<DocTableStateRecord> states;
             try {
-                tableName = determineProfitSheetTable(docId, token);
-                records = queryBalanceSheetData(docId, tableName, token);
+                states = queryDocTableStates(docId, token);
             } catch (BusinessException e) {
-                log.warn("Query failed for docId={} profit sheet: {}, outputting empty column", docId, e.getMessage());
-                records = null;
+                log.warn("Query table states failed for docId={}: {}", docId, e.getMessage());
+                continue;
             }
-            if (records == null || records.isEmpty()) {
-                log.warn("No profit sheet data for docId={}, outputting empty column", docId);
+            String bsTableName = determineSheetTable(docId, states, token,
+                    "dib_fin_balance", "dib_fin_balance_parent", "资产负债表");
+            String psTableName = determineSheetTable(docId, states, token,
+                    "dib_fin_profit_statement", "dib_fin_profit_statement_parent", "利润表");
+
+            // 查询资产负债表数据
+            List<FinanceRecord> bsRecords = null;
+            try {
+                bsRecords = queryFinanceData(docId, bsTableName, token);
+            } catch (BusinessException e) {
+                log.warn("Query failed for docId={} balance sheet: {}", docId, e.getMessage());
+            }
+            if (bsRecords == null || bsRecords.isEmpty()) {
+                log.warn("No balance sheet data for docId={}", docId);
             }
 
-            String reportDate = (records != null && !records.isEmpty()) ? extractReportDateFromRecords(records) : null;
-            if (reportDate == null || reportDate.isEmpty()) {
-                reportDate = entry.getReportDate();
+            // 查询利润表数据
+            List<FinanceRecord> psRecords = null;
+            try {
+                psRecords = queryFinanceData(docId, psTableName, token);
+            } catch (BusinessException e) {
+                log.warn("Query failed for docId={} profit sheet: {}", docId, e.getMessage());
             }
+            if (psRecords == null || psRecords.isEmpty()) {
+                log.warn("No profit sheet data for docId={}", docId);
+            }
+
+            // 提取 reportDate：优先从查询结果取，fallback 到 entry.getReportDate()
+            String bsReportDate = (bsRecords != null && !bsRecords.isEmpty()) ? extractReportDateFromRecords(bsRecords) : null;
+            String psReportDate = (psRecords != null && !psRecords.isEmpty()) ? extractReportDateFromRecords(psRecords) : null;
+            String reportDate = bsReportDate != null && !bsReportDate.isEmpty() ? bsReportDate
+                    : psReportDate != null && !psReportDate.isEmpty() ? psReportDate : entry.getReportDate();
+
             if (reportDate == null || reportDate.isEmpty()) {
                 log.warn("No report date for docId={}, skipping", docId);
                 continue;
             }
 
             String dateCol = formatDateColumn(reportDate);
-            if (!psDateColumns.contains(dateCol)) {
-                psDateColumns.add(dateCol);
+
+            // 资产负债表聚合
+            if (bsRecords != null) {
+                if (!bsDateColumns.contains(dateCol)) {
+                    bsDateColumns.add(dateCol);
+                }
+                for (FinanceRecord r : bsRecords) {
+                    String itemName = r.getItem();
+                    if (itemName != null && BALANCE_SHEET_KEY_ITEMS.contains(itemName)
+                            && r.getCurrentAmount() != null) {
+                        bsItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
+                                .put(dateCol, r.getCurrentAmount());
+                    }
+                }
+                // 利用 lastAmount 补全缺失的上一期日期列
+                fillLastAmountColumn(bsRecords, bsItemDateValues, bsDateColumns, dateCol, reportDate);
             }
 
-            if (records != null) {
+            // 利润表聚合
+            if (psRecords != null) {
+                if (!psDateColumns.contains(dateCol)) {
+                    psDateColumns.add(dateCol);
+                }
                 for (String itemName : PROFIT_SHEET_KEY_ITEMS) {
-                    BigDecimal value = findProfitItemValue(records, itemName);
+                    BigDecimal value = findProfitItemValue(psRecords, itemName);
                     if (value != null) {
                         psItemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
                                 .put(dateCol, value);
                     }
                 }
+                // 利用 lastAmount 补全缺失的上一期日期列
+                fillLastAmountColumnForProfit(psRecords, psItemDateValues, psDateColumns, dateCol, reportDate);
             }
         }
+
+        if (bsDateColumns.isEmpty()) {
+            log.warn("No balance sheet data found for taskId={}, placeholder will be empty", taskId);
+        }
+        if (psDateColumns.isEmpty()) {
+            log.warn("No profit sheet data found for taskId={}, placeholder will be empty", taskId);
+        }
+
+        // ============ 从缓存表读取商业计划书提取数据（在清理之前） ============
+        Map<String, String> extractTextMap = loadExtractDataFromCache(taskId);
+
+        // ============ 从 sxd_record 读取实控人姓名和管户权 ============
+        String actCntlrNm = record.getActCntlrNm();
+        boolean hasOwnership = "1".equals(record.getHasOwnership());
 
         // ============ 更新任务状态 + 清理文档记录和缓存 ============
         docEntryMapper.delete(new LambdaQueryWrapper<DocEntry>()
@@ -545,15 +573,10 @@ public class ExtractDataServiceImpl implements ExtractDataService {
         extractDataMapper.delete(new LambdaQueryWrapper<ExtractData>()
                 .eq(ExtractData::getTaskId, taskId));
         record.setStatus(TaskStatus.COMPLETED);
-        record.setUpdatedAt(LocalDateTime.now());
         sxdMapper.updateById(record);
 
-        // ============ 从缓存表读取商业计划书提取数据 ============
-        Map<String, String> extractTextMap = loadExtractDataFromCache(taskId);
-
-        // ============ 从 sxd_record 读取实控人姓名和管户权 ============
-        String actCntlrNm = record.getActCntlrNm();
-        boolean hasOwnership = "1".equals(record.getHasOwnership());
+        // ============ 删除外部系统中的文档 ============
+        deleteExternalDocs(entries, token);
 
         // ============ 生成 Word 文档 ============
         return createWordDocument(customerProfile, actCntlrNm, hasOwnership,
@@ -591,25 +614,30 @@ public class ExtractDataServiceImpl implements ExtractDataService {
     }
 
     /**
-     * 通过表格提取状态和审计报告附注判断使用合并还是母公司资产负债表。
+     * 通过表格提取状态和审计报告附注判断使用合并还是母公司报表。
      * <p>
      * ① 有审计报告附注 → 查询"财务报表口径"：1-单一（母公司表）/ 2-合并（合并表）
-     * ② 无审计报告附注 → dib_fin_balance 和 dib_fin_balance_parent 哪个状态为Y用哪个，都Y或都F默认合并表
+     * ② 无审计报告附注 → 合并表和母公司表哪个状态为Y用哪个，都Y或都非Y默认合并表
+     *
+     * @param states         已查询到的表格提取状态列表
+     * @param mergeTableName 合并报表表名（如 dib_fin_balance）
+     * @param parentTableName 母公司报表表名（如 dib_fin_balance_parent）
+     * @param reportTypeName 报表类型名称（用于日志）
      */
-    private String determineBalanceSheetTable(Long docId, String token) {
-        List<DocTableStateRecord> states = queryDocTableStates(docId, token);
-
+    private String determineSheetTable(Long docId, List<DocTableStateRecord> states, String token,
+                                       String mergeTableName, String parentTableName, String reportTypeName) {
         DocTableStateRecord auditNote = null;
-        DocTableStateRecord balance = null;
-        DocTableStateRecord balanceParent = null;
+        DocTableStateRecord merge = null;
+        DocTableStateRecord parent = null;
 
         for (DocTableStateRecord state : states) {
-            if ("dib_intervening_y_auditreport_jh".equals(state.getTableName())) {
+            String name = state.getTableName();
+            if ("dib_intervening_y_auditreport_jh".equals(name)) {
                 auditNote = state;
-            } else if ("dib_fin_balance".equals(state.getTableName())) {
-                balance = state;
-            } else if ("dib_fin_balance_parent".equals(state.getTableName())) {
-                balanceParent = state;
+            } else if (mergeTableName.equals(name)) {
+                merge = state;
+            } else if (parentTableName.equals(name)) {
+                parent = state;
             }
         }
 
@@ -617,83 +645,28 @@ public class ExtractDataServiceImpl implements ExtractDataService {
         if (auditNote != null && "Y".equals(auditNote.getExtractState())) {
             String scope = queryFinanceReportScope(docId, token);
             if ("1".equals(scope)) {
-                log.info("Doc {} 财务报表口径=单一，使用母公司资产负债表", docId);
-                return "dib_fin_balance_parent";
+                log.info("Doc {} 财务报表口径=单一，使用母公司{}", docId, reportTypeName);
+                return parentTableName;
             } else if ("2".equals(scope)) {
-                log.info("Doc {} 财务报表口径=合并，使用合并资产负债表", docId);
-                return "dib_fin_balance";
-            }
-            // scope 查询失败，回退到状态判断
-            log.warn("Doc {} 无法确定财务报表口径（scope={}），回退到状态判断", docId, scope);
-        }
-
-        // ② 无审计报告附注（或口径查询失败）→ 查看状态
-        boolean balanceY = balance != null && "Y".equals(balance.getExtractState());
-        boolean parentY = balanceParent != null && "Y".equals(balanceParent.getExtractState());
-
-        if (balanceY && !parentY) {
-            log.info("Doc {} 合并资产负债表状态为Y，使用合并表", docId);
-            return "dib_fin_balance";
-        } else if (!balanceY && parentY) {
-            log.info("Doc {} 母公司资产负债表状态为Y，使用母公司表", docId);
-            return "dib_fin_balance_parent";
-        } else {
-            // 状态都为Y或都非Y → 默认合并资产负债表
-            log.info("Doc {} 默认使用合并资产负债表（balanceY={}, parentY={})", docId, balanceY, parentY);
-            return "dib_fin_balance";
-        }
-    }
-
-    /**
-     * 通过表格提取状态和审计报告附注判断使用合并还是母公司利润表。
-     * <p>
-     * ① 有审计报告附注 → 查询"财务报表口径"：1-单一（母公司表）/ 2-合并（合并表）
-     * ② 无审计报告附注 → dib_fin_profit_statement 和 dib_fin_profit_statement_parent
-     *    哪个状态为Y用哪个，都Y或都F默认合并利润表
-     */
-    private String determineProfitSheetTable(Long docId, String token) {
-        List<DocTableStateRecord> states = queryDocTableStates(docId, token);
-
-        DocTableStateRecord auditNote = null;
-        DocTableStateRecord profit = null;
-        DocTableStateRecord profitParent = null;
-
-        for (DocTableStateRecord state : states) {
-            if ("dib_intervening_y_auditreport_jh".equals(state.getTableName())) {
-                auditNote = state;
-            } else if ("dib_fin_profit_statement".equals(state.getTableName())) {
-                profit = state;
-            } else if ("dib_fin_profit_statement_parent".equals(state.getTableName())) {
-                profitParent = state;
-            }
-        }
-
-        // ① 审计报告附注已提取 → 查询"财务报表口径"
-        if (auditNote != null && "Y".equals(auditNote.getExtractState())) {
-            String scope = queryFinanceReportScope(docId, token);
-            if ("1".equals(scope)) {
-                log.info("Doc {} 财务报表口径=单一，使用母公司利润表", docId);
-                return "dib_fin_profit_statement_parent";
-            } else if ("2".equals(scope)) {
-                log.info("Doc {} 财务报表口径=合并，使用合并利润表", docId);
-                return "dib_fin_profit_statement";
+                log.info("Doc {} 财务报表口径=合并，使用合并{}", docId, reportTypeName);
+                return mergeTableName;
             }
             log.warn("Doc {} 无法确定财务报表口径（scope={}），回退到状态判断", docId, scope);
         }
 
         // ② 无审计报告附注（或口径查询失败）→ 查看状态
-        boolean profitY = profit != null && "Y".equals(profit.getExtractState());
-        boolean parentY = profitParent != null && "Y".equals(profitParent.getExtractState());
+        boolean mergeY = merge != null && "Y".equals(merge.getExtractState());
+        boolean parentY = parent != null && "Y".equals(parent.getExtractState());
 
-        if (profitY && !parentY) {
-            log.info("Doc {} 合并利润表状态为Y，使用合并表", docId);
-            return "dib_fin_profit_statement";
-        } else if (!profitY && parentY) {
-            log.info("Doc {} 母公司利润表状态为Y，使用母公司表", docId);
-            return "dib_fin_profit_statement_parent";
+        if (mergeY && !parentY) {
+            log.info("Doc {} 合并{}状态为Y，使用合并表", docId, reportTypeName);
+            return mergeTableName;
+        } else if (!mergeY && parentY) {
+            log.info("Doc {} 母公司{}状态为Y，使用母公司表", docId, reportTypeName);
+            return parentTableName;
         } else {
-            log.info("Doc {} 默认使用合并利润表（profitY={}, parentY={})", docId, profitY, parentY);
-            return "dib_fin_profit_statement";
+            log.info("Doc {} 默认使用合并{}（mergeY={}, parentY={})", docId, reportTypeName, mergeY, parentY);
+            return mergeTableName;
         }
     }
 
@@ -703,7 +676,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
      * @return "1"(单一) 或 "2"(合并)，查询失败返回 null
      */
     private String queryFinanceReportScope(Long docId, String token) {
-        ExtractQueryDataRequest request = new ExtractQueryDataRequest(docId,
+        BpExtractRequest request = new BpExtractRequest(docId,
                 "dib_intervening_y_auditreport_jh");
         try {
             HttpHeaders headers = new HttpHeaders();
@@ -711,7 +684,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             if (StringUtils.hasText(token)) {
                 headers.set("c1-token", token);
             }
-            HttpEntity<ExtractQueryDataRequest> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<BpExtractRequest> requestEntity = new HttpEntity<>(request, headers);
             ResponseEntity<ExternalResponse> response = restTemplate.exchange(
                     apiProperties.getDocQueryDataUrl(),
                     HttpMethod.POST,
@@ -736,17 +709,18 @@ public class ExtractDataServiceImpl implements ExtractDataService {
     }
 
     /**
-     * 查询资产负债表的提取数据（调用外部 queryData 接口）。
+     * 查询财务报表的提取数据（调用外部 queryData 接口）。
+     * 同时用于资产负债表和利润表查询。
      */
-    private List<BalanceSheetRecord> queryBalanceSheetData(Long docId, String tableName, String token) {
-        ExtractQueryDataRequest request = new ExtractQueryDataRequest(docId, tableName);
+    private List<FinanceRecord> queryFinanceData(Long docId, String tableName, String token) {
+        BpExtractRequest request = new BpExtractRequest(docId, tableName);
         try {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             if (StringUtils.hasText(token)) {
                 headers.set("c1-token", token);
             }
-            HttpEntity<ExtractQueryDataRequest> requestEntity = new HttpEntity<>(request, headers);
+            HttpEntity<BpExtractRequest> requestEntity = new HttpEntity<>(request, headers);
             ResponseEntity<ExternalResponse> response = restTemplate.exchange(
                     apiProperties.getDocQueryDataUrl(),
                     HttpMethod.POST,
@@ -755,24 +729,53 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             ExternalResponse respBody = response.getBody();
             if (respBody == null || !respBody.isSuccess() || respBody.getData() == null) {
                 throw new BusinessException("DOC_QUERY_FAILED",
-                        "资产负债表数据查询失败：" + (respBody != null ? respBody.getMessage() : "未知错误"));
+                        "财务报表数据查询失败：" + (respBody != null ? respBody.getMessage() : "未知错误"));
             }
-            return respBody.getDataAsList(BalanceSheetRecord.class);
+            return respBody.getDataAsList(FinanceRecord.class);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("Failed to query balance sheet data for docId={}, tableName={}", docId, tableName, e);
+            log.error("Failed to query finance data for docId={}, tableName={}", docId, tableName, e);
             throw new BusinessException("DOC_QUERY_FAILED",
-                    "资产负债表数据查询异常：" + e.getMessage());
+                    "财务报表数据查询异常：" + e.getMessage());
         }
+    }
+
+    /**
+     * 调用外部资料删除 API，逐个删除外部系统中的文档。
+     * 单个文档删除失败仅告警，不影响整体流程。
+     */
+    private void deleteExternalDocs(List<DocEntry> entries, String token) {
+        for (DocEntry entry : entries) {
+            try {
+                deleteExternalDoc(entry.getDocId(), token);
+            } catch (Exception e) {
+                log.warn("Failed to delete external doc {}: {}", entry.getDocId(), e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 调用外部 API 删除单个文档。
+     */
+    private void deleteExternalDoc(String docId, String token) {
+        String url = apiProperties.getDocDeleteUrl() + "/" + docId;
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (StringUtils.hasText(token)) {
+            headers.set("c1-token", token);
+        }
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+        restTemplate.exchange(url, HttpMethod.POST, requestEntity, ExternalResponse.class);
+        log.info("Deleted external doc: docId={}", docId);
     }
 
     /**
      * 从查询结果中提取第一个非空的 report_date。
      */
-    private String extractReportDateFromRecords(List<BalanceSheetRecord> records) {
+    private String extractReportDateFromRecords(List<FinanceRecord> records) {
         if (records == null) return null;
-        for (BalanceSheetRecord record : records) {
+        for (FinanceRecord record : records) {
             if (record.getReportDate() != null && !record.getReportDate().isEmpty()) {
                 return record.getReportDate();
             }
@@ -797,6 +800,76 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             return year + "年" + month + "月";
         } catch (NumberFormatException e) {
             return year + "年";
+        }
+    }
+
+    /**
+     * 仅当 reportDate 为年末（12月31日）时，推算上一期日期列名。
+     * 例如 "2025-12-31" → "2024年"。非年末返回 null。
+     */
+    private String derivePrevDateCol(String reportDate) {
+        if (reportDate == null || reportDate.isEmpty()) return null;
+        String[] parts = reportDate.split("-");
+        if (parts.length < 3) return null;
+        if (!"12".equals(parts[1]) || !"31".equals(parts[2])) return null;
+        try {
+            int year = Integer.parseInt(parts[0]);
+            return (year - 1) + "年";
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * 利用资产负债表的 lastAmount 补全缺失的上一期日期列。
+     * 仅当上一期日期列不存在时才写入，不覆盖已有数据。
+     */
+    private void fillLastAmountColumn(List<FinanceRecord> records,
+                                      Map<String, Map<String, BigDecimal>> itemDateValues,
+                                      List<String> dateColumns,
+                                      String currentDateCol, String reportDate) {
+        String prevDateCol = derivePrevDateCol(reportDate);
+        if (prevDateCol == null || dateColumns.contains(prevDateCol)) return;
+
+        boolean hasLastAmount = false;
+        for (FinanceRecord r : records) {
+            String itemName = r.getItem();
+            if (itemName != null && BALANCE_SHEET_KEY_ITEMS.contains(itemName)
+                    && r.getLastAmount() != null) {
+                itemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
+                        .put(prevDateCol, r.getLastAmount());
+                hasLastAmount = true;
+            }
+        }
+        if (hasLastAmount) {
+            dateColumns.add(prevDateCol);
+            log.info("Filled lastAmount column {} from doc reportDate={}", prevDateCol, reportDate);
+        }
+    }
+
+    /**
+     * 利用利润表的 lastAmount 补全缺失的上一期日期列。
+     * 仅当上一期日期列不存在时才写入，不覆盖已有数据。
+     */
+    private void fillLastAmountColumnForProfit(List<FinanceRecord> records,
+                                               Map<String, Map<String, BigDecimal>> itemDateValues,
+                                               List<String> dateColumns,
+                                               String currentDateCol, String reportDate) {
+        String prevDateCol = derivePrevDateCol(reportDate);
+        if (prevDateCol == null || dateColumns.contains(prevDateCol)) return;
+
+        boolean hasLastAmount = false;
+        for (String itemName : PROFIT_SHEET_KEY_ITEMS) {
+            BigDecimal lastVal = findProfitItemLastAmount(records, itemName);
+            if (lastVal != null) {
+                itemDateValues.computeIfAbsent(itemName, k -> new LinkedHashMap<>())
+                        .put(prevDateCol, lastVal);
+                hasLastAmount = true;
+            }
+        }
+        if (hasLastAmount) {
+            dateColumns.add(prevDateCol);
+            log.info("Filled lastAmount column {} for profit from doc reportDate={}", prevDateCol, reportDate);
         }
     }
 
@@ -864,13 +937,28 @@ public class ExtractDataServiceImpl implements ExtractDataService {
      * 从利润表记录中按 item_standard 精确匹配指定科目的 current_amount。
      * 如"营业收入"匹配 item_standard="营业总收入"。
      */
-    private BigDecimal findProfitItemValue(List<BalanceSheetRecord> records, String displayName) {
+    private BigDecimal findProfitItemValue(List<FinanceRecord> records, String displayName) {
         List<String> keys = PROFIT_ITEM_SEARCH_KEYS.get(displayName);
         if (keys == null || records == null) return null;
 
-        for (BalanceSheetRecord r : records) {
+        for (FinanceRecord r : records) {
             if (r.getItemStandard() != null && keys.contains(r.getItemStandard())) {
                 return r.getCurrentAmount();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 从利润表记录中按 item_standard 匹配指定科目的 last_amount。
+     */
+    private BigDecimal findProfitItemLastAmount(List<FinanceRecord> records, String displayName) {
+        List<String> keys = PROFIT_ITEM_SEARCH_KEYS.get(displayName);
+        if (keys == null || records == null) return null;
+
+        for (FinanceRecord r : records) {
+            if (r.getItemStandard() != null && keys.contains(r.getItemStandard())) {
+                return r.getLastAmount();
             }
         }
         return null;
@@ -893,10 +981,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
      * <p>
      * 包含 9 个基本科目（营业收入 ~ 净利润）+ 3 个计算比例行（毛利润率、净利润率、研发费用占比）。
      * 增长率规则同资产负债表关键科目：取最后两个年末（12-31）列计算同比。
-/** 提交时从请求体解析的文件项（attId + businessType key + reportDate），businessType 在 buildBatchAddItems 中回填为 docTypeId */
-
-
-    // ========== Word 文档生成（模板模式） ==========
+// ========== Word 文档生成（模板模式） ==========
 
     /**
      * 打开模板文档，替换 {{占位符}} 为实际数据，返回 Word 文档字节。
@@ -925,16 +1010,20 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             // 2. 替换商业计划书提取数据占位符 {{dib_manage_company_profile}} 等
             replaceExtractDataPlaceholders(doc, extractTextMap);
 
-            // 3. 替换资产负债表关键科目占位符 -> 插入表格
+            // 3. 替换资产负债表关键科目占位符 -> 插入表格或清空
             if (!bsDateColumns.isEmpty()) {
                 replacePlaceholderWithTable(doc, "{{资产负债表关键科目}}",
                         table -> fillBalanceSheetTable(table, bsItemDateValues, bsDateColumns));
+            } else {
+                replacePlaceholderText(doc, "{{资产负债表关键科目}}", "");
             }
 
-            // 4. 替换利润表关键科目占位符 -> 插入表格
+            // 4. 替换利润表关键科目占位符 -> 插入表格或清空
             if (!psDateColumns.isEmpty()) {
                 replacePlaceholderWithTable(doc, "{{利润表关键科目}}",
                         table -> fillProfitSheetTable(table, psItemDateValues, psDateColumns));
+            } else {
+                replacePlaceholderText(doc, "{{利润表关键科目}}", "");
             }
 
             doc.write(baos);
@@ -963,8 +1052,8 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                         if (!hasOwnership && OWNERSHIP_SENSITIVE_FIELDS.contains(entry.getKey())) {
                             value = "";
                         } else {
-                            value = profile != null ? entry.getValue().apply(profile) : "-";
-                            value = value != null ? value : "-";
+                            value = profile != null ? entry.getValue().apply(profile) : "";
+                            value = value != null ? value : "";
                         }
                         replaced = replaced.replace(placeholder, value);
                         changed = true;
@@ -973,7 +1062,7 @@ public class ExtractDataServiceImpl implements ExtractDataService {
                 // 实控人姓名从 sxd_record 表读取
                 if (replaced.contains("{{act_cntlr_nm}}")) {
                     replaced = replaced.replace("{{act_cntlr_nm}}",
-                            actCntlrNm != null ? actCntlrNm : "-");
+                            actCntlrNm != null ? actCntlrNm : "");
                     changed = true;
                 }
                 if (changed) {
@@ -1058,6 +1147,21 @@ public class ExtractDataServiceImpl implements ExtractDataService {
             }
         }
         log.warn("Placeholder not found in template: {}", placeholder);
+    }
+
+    /**
+     * 将文档中指定占位符替换为给定的文本。
+     */
+    private void replacePlaceholderText(XWPFDocument doc, String placeholder, String replacement) {
+        for (XWPFParagraph para : doc.getParagraphs()) {
+            for (XWPFRun run : para.getRuns()) {
+                String text = run.getText(0);
+                if (text != null && text.contains(placeholder)) {
+                    run.setText(text.replace(placeholder, replacement), 0);
+                    return;
+                }
+            }
+        }
     }
 
     /**

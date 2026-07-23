@@ -12,6 +12,9 @@ import org.springframework.web.servlet.HandlerInterceptor;
 /**
  * Token 拦截器：从请求头 Authorization: Bearer <encrypted-token> 中提取并解密 token。
  * 解密后的用户编号存入 request attribute（key="userId"），供后续业务使用。
+ *
+ * @author qiuhaoquan
+ * @since 2026-07-23
  */
 @Slf4j
 @Component
